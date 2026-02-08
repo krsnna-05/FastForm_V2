@@ -16,3 +16,7 @@ app.get("/", (req: Request, res: Response) => {
     message: "Server is Running! 😁 🚀",
   });
 });
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server is running on local : http://localhost:${PORT}`);
+});
