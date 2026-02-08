@@ -2,11 +2,7 @@ import { Button } from "@/components/ui/button";
 import React from "react";
 
 const Home = () => {
-  return (
-    <div className=" h-screen w-screen bg-background text-foreground">
-      <Button variant={"default"}>Submit</Button>
-    </div>
-  );
+  return <div className="flex-1"></div>;
 };
 
 export default Home;
