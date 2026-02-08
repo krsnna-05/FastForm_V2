@@ -19,7 +19,7 @@ import { ModeToggle } from "../theme-switch";
 
 // Simple logo component for the navbar
 const Logo = () => {
-  return <FormIcon />;
+  return <FormIcon className=" text-primary" />;
 };
 
 const CtaLogo = ({ varient }: { varient: "dark" | "light" }) => {
@@ -141,8 +141,6 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
 // Default navigation links
 const defaultNavigationLinks: NavbarNavLink[] = [
   { href: "#", label: "Home", active: true },
-  { href: "#features", label: "Features" },
-  { href: "#pricing", label: "Pricing" },
   { href: "#about", label: "About" },
 ];
 
