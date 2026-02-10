@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import envConfig from "./config/env";
+import { envConfig } from "./config/env";
 
 // type imports
 import { Request, Response } from "express";
