@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import Home from "./pages/Home.tsx";
 import NavLayout from "./components/layout/navLayout.tsx";
 import { ThemeProvider } from "./components/theme-provider.tsx";
+import AuthCallback from "./pages/AuthCallback.tsx";
 
 const router = createBrowserRouter([
   {
@@ -15,6 +16,10 @@ const router = createBrowserRouter([
         element: <Home />,
       },
     ],
+  },
+  {
+    path: "/auth/callback",
+    element: <AuthCallback />,
   },
 ]);
 
