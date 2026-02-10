@@ -1,5 +1,5 @@
-import { Feature } from "@/components/feature";
-import { Hero } from "@/components/hero";
+import { Feature } from "@/components/home/feature";
+import { Hero } from "@/components/home/hero";
 import { CtaLogo, Logo } from "@/components/ui/navbar";
 import { Bot, CheckCircle2, Sparkles, Zap } from "lucide-react";
 import { useTheme } from "next-themes";
