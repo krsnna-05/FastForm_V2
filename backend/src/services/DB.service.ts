@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import UserModel from "../models/User";
 
 type addUserParams = {
@@ -39,4 +38,16 @@ class DBService {
       throw error;
     }
   };
+
+  addUser = async ({ user }: addUserParams): Promise<void> => {
+    try {
+      const newUser = new UserModel(user);
+      await newUser.save();
+    } catch (error) {
+      console.error("Error adding user to the database:", error);
+      throw error;
+    }
+  };
 }
+
+export default new DBService();
