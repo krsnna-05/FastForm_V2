@@ -12,9 +12,24 @@ type addUserParams = {
 };
 
 class DBService {
-  checkIfUserExists = async (userId: string): Promise<boolean> => {
+  checkIfUserExistswithId = async (userId: string): Promise<boolean> => {
     try {
       const user = await UserModel.findById(userId).exec();
+
+      if (!user) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error checking user existence:", error);
+      throw error;
+    }
+  };
+
+  checkIfUserExistswithEmail = async (email: string): Promise<boolean> => {
+    try {
+      const user = await UserModel.findOne({ email }).exec();
 
       if (!user) {
         return false;
