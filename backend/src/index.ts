@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { envConfig } from "./config/env";
+import { envConfig, googleAuthConfig, googleAuthScopes } from "./config/env";
 
 // type imports
 import { Request, Response } from "express";
@@ -8,7 +8,7 @@ import { connectDB } from "./DB";
 import authRouter from "./routes/auth.route";
 
 const app = express();
-const PORT = envConfig.PORT;
+const PORT = envConfig.PORT || 3000;
 
 connectDB().catch((error) => {
   console.error("Failed to connect to MongoDB:", error);
@@ -17,7 +17,7 @@ connectDB().catch((error) => {
 
 app.use(cors());
 app.use(express.json());
-app.use("api/auth", authRouter);
+app.use("/api/auth", authRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.send({

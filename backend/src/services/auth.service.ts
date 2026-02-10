@@ -5,9 +5,9 @@ import JWTUserPayload from "../types/User.JWT";
 
 class authService {
   private oAuth2Client = new google.auth.OAuth2(
-    googleAuthConfig.GOOGLE_CLIENT_ID,
-    googleAuthConfig.GOOGLE_CLIENT_SECRET,
-    googleAuthConfig.GOOGLE_REDIRECT_URI,
+    googleAuthConfig.GOOGLE_AUTH_CLIENT_ID,
+    googleAuthConfig.GOOGLE_AUTH_CLIENT_SECRET,
+    googleAuthConfig.GOOGLE_AUTH_REDIRECT_URL,
   );
 
   getRedirectURL = (): string => {

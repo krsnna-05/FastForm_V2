@@ -3,10 +3,9 @@ import authService from "../services/auth.service";
 
 const auth = async (req: Request, res: Response) => {
   try {
-    const authMethod = req.query.authMethod as "auto" | "clicked" | undefined;
     const authHeader = req.headers.authorization;
 
-    if (authHeader && authMethod === "auto") {
+    if (authHeader) {
       const token = authHeader.startsWith("Bearer ")
         ? authHeader.slice("Bearer ".length)
         : authHeader;
@@ -23,17 +22,8 @@ const auth = async (req: Request, res: Response) => {
         },
       });
     }
-
-    if (!authHeader && authMethod === "clicked") {
-      const redirectURL = authService.getRedirectURL();
-      return res.redirect(redirectURL);
-    }
-
-    return res.status(400).json({
-      success: false,
-      message: "Invalid auth request",
-    });
   } catch (error) {
+    console.error("Authentication error:", error);
     return res.status(401).json({
       success: false,
       message: "Unauthorized",
@@ -41,6 +31,13 @@ const auth = async (req: Request, res: Response) => {
   }
 };
 
+const googleAuth = async (req: Request, res: Response) => {
+  const redirectURL = authService.getRedirectURL();
+  console.log("Redirecting to Google OAuth URL:", redirectURL);
+
+  return res.redirect(redirectURL);
+};
+
 const authCallback = (req: Request, res: Response) => {};
 
-export { auth, authCallback };
+export { auth, authCallback, googleAuth };
