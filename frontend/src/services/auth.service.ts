@@ -6,14 +6,29 @@ class AuthService {
   };
 
   authorizeWithJWTToken = async () => {
-    const JWTToken = localStorage.getItem("fastform_jwt_token");
+    console.log("Attempting to authorize with JWT token...");
 
-    fetch("/api/auth/google", {
+    const lastUserData = JSON.parse(
+      localStorage.getItem("fastform_last_user") || "null",
+    );
+
+    console.log("Found last user data in localStorage:", lastUserData);
+
+    if (!lastUserData || !lastUserData.user || !lastUserData.JWTToken) {
+      return;
+    }
+
+    const res = await fetch(`${envConfig.BACKEND_URI}/api/auth/verify`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${JWTToken}`,
+        Authorization: `Bearer ${lastUserData.JWTToken}`,
       },
     });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
   };
 
   authCallback = async (code: string) => {

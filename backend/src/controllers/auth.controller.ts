@@ -15,6 +15,22 @@ const auth = async (req: Request, res: Response) => {
 
       const payload = await authService.authorizeWithJWTToken(token);
 
+      const user = await DBService.getUserByEmail(payload.email);
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      if (payload.userId !== user.userId.toString()) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized Access",
+        });
+      }
+
       return res.json({
         success: true,
         JWTToken: token,
@@ -22,6 +38,7 @@ const auth = async (req: Request, res: Response) => {
           userId: payload.userId,
           name: payload.name,
           email: payload.email,
+          profile: user.user.profilePictureUrl,
         },
       });
     }

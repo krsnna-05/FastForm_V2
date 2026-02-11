@@ -6,6 +6,7 @@ import Home from "./pages/Home.tsx";
 import NavLayout from "./components/layout/navLayout.tsx";
 import { ThemeProvider } from "./components/theme-provider.tsx";
 import AuthCallback from "./pages/AuthCallback.tsx";
+import Protected from "./components/layout/protected.tsx";
 
 const router = createBrowserRouter([
   {
@@ -13,7 +14,11 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <Home />,
+        element: (
+          <Protected>
+            <Home />
+          </Protected>
+        ),
       },
     ],
   },
