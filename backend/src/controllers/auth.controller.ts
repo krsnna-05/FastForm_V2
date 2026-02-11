@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import AuthService from "../services/auth.service";
 import GoogleApiService from "../services/googleapi.service";
 import DBService from "../services/DB.service";
-import { profile } from "node:console";
 
 const auth = async (req: Request, res: Response) => {
   try {
@@ -46,9 +45,14 @@ const googleAuth = async (req: Request, res: Response) => {
 
 const authCallback = async (req: Request, res: Response) => {
   try {
-    const { code } = req.query;
+    const code =
+      typeof req.query.code === "string"
+        ? req.query.code
+        : typeof req.body?.code === "string"
+          ? req.body.code
+          : null;
 
-    if (!code || typeof code !== "string") {
+    if (!code) {
       return res.status(400).json({
         success: false,
         error: "auth_code_required",
@@ -73,41 +77,30 @@ const authCallback = async (req: Request, res: Response) => {
 
     const userInfo = await googleApiService.getUserInfo();
 
-    const isUserExists = await DBService.checkIfUserExistswithEmail(
-      userInfo.email,
-    );
+    const userResult = await DBService.getUserByEmail(userInfo.email);
 
-    if (isUserExists) {
-      const JWTToken = authService.generateJWTToken({
-        userId: userInfo.userId,
-        name: userInfo.name,
-        email: userInfo.email,
-      });
+    if (userResult) {
+      const { user, userId } = userResult;
 
-      await DBService.updateUserAccessToken(
-        userInfo.userId,
+      await DBService.updateUserTokens(
+        userId,
         tokens.access_token,
+        tokens.refresh_token,
       );
 
-      const userResult = await DBService.getUserByEmail(userInfo.email);
-
-      if (!userResult || !userResult.user) {
-        return res.status(500).json({
-          success: false,
-          error: "user_fetch_failed",
-          message: "Failed to fetch user from the database",
-        });
-      }
-
-      const { user, userId } = userResult;
+      const JWTToken = authService.generateJWTToken({
+        userId,
+        name: user.name,
+        email: user.email,
+      });
 
       return res.json({
         success: true,
-        message: "User Creation Successful",
+        message: "Authentication Successful",
         user: {
-          userId: userId,
-          name: userInfo.name,
-          email: userInfo.email,
+          userId,
+          name: user.name,
+          email: user.email,
           profile: user.profilePictureUrl,
         },
         JWTToken,
@@ -119,7 +112,7 @@ const authCallback = async (req: Request, res: Response) => {
       name: userInfo.name,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
-      profilePictureUrl: userInfo.profilePictureUrl,
+      profilePictureUrl: userInfo.picture,
     });
 
     if (!isUserAdded) {
@@ -130,16 +123,33 @@ const authCallback = async (req: Request, res: Response) => {
       });
     }
 
+    const createdUserResult = await DBService.getUserByEmail(userInfo.email);
+
+    if (!createdUserResult) {
+      return res.status(500).json({
+        success: false,
+        error: "user_fetch_failed",
+        message: "Failed to fetch user from the database",
+      });
+    }
+
+    const { user, userId } = createdUserResult;
+
     const JWTToken = authService.generateJWTToken({
-      userId: userInfo.userId,
-      name: userInfo.name,
-      email: userInfo.email,
+      userId,
+      name: user.name,
+      email: user.email,
     });
 
     return res.json({
       success: true,
-      message: "Authentication Successful",
-      user: userInfo,
+      message: "User Created Successfully",
+      user: {
+        userId,
+        name: user.name,
+        email: user.email,
+        profile: user.profilePictureUrl,
+      },
       JWTToken,
     });
   } catch (error) {

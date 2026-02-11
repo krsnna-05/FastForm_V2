@@ -69,6 +69,24 @@ class DBService {
     }
   };
 
+  updateUserTokens = async (
+    userId: string,
+    accessToken: string,
+    refreshToken?: string,
+  ): Promise<void> => {
+    try {
+      const update: Partial<user> = { accessToken };
+      if (refreshToken) {
+        update.refreshToken = refreshToken;
+      }
+
+      await UserModel.findByIdAndUpdate(userId, update).exec();
+    } catch (error) {
+      console.error("Error updating user tokens:", error);
+      throw error;
+    }
+  };
+
   addUser = async (user: user): Promise<boolean> => {
     try {
       const newUser = new UserModel(user);

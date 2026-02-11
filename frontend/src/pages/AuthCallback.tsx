@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { FormIcon, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import authService from "@/services/auth.service";
@@ -29,6 +29,7 @@ const AuthCallback = () => {
   const [countdown, setCountdown] = useState(3);
   const navigate = useNavigate();
   const { login } = useAuthStore();
+  const hasRequestedRef = useRef(false);
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -51,6 +52,12 @@ const AuthCallback = () => {
       });
       return;
     }
+
+    if (hasRequestedRef.current) {
+      return;
+    }
+
+    hasRequestedRef.current = true;
 
     console.log("Received auth code:", code);
     console.log("Initiating auth callback with code:", code);

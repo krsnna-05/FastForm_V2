@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { FormIcon } from "lucide-react";
 import { ModeToggle } from "../theme-switch";
+import { Avatar, AvatarImage, AvatarFallback } from "./avatar";
 
 // Simple logo component for the navbar
 const Logo = () => {
@@ -140,6 +141,9 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   ctaLogoDark?: React.ReactNode;
   onSignInClick?: () => void;
   onCtaClick?: () => void;
+  isAuthenticated?: boolean;
+  userName?: string;
+  userPictureUrl?: string;
 }
 
 // Default navigation links
@@ -163,12 +167,17 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       ctaLogoDark = <CtaLogo varient="dark" />,
       onSignInClick,
       onCtaClick,
+      isAuthenticated = false,
+      userName,
+      userPictureUrl,
       ...props
     },
     ref,
   ) => {
     const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef<HTMLElement>(null);
+
+    console.log(userName, userPictureUrl);
 
     useEffect(() => {
       const checkWidth = () => {
@@ -290,21 +299,38 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           </div>
           {/* Right side */}
           <div className="flex items-center gap-3">
-            <ModeToggle />
-            <Button
-              className="text-sm font-medium px-4 h-9 rounded-md shadow-sm"
-              onClick={(e) => {
-                e.preventDefault();
-                if (onCtaClick) {
-                  onCtaClick();
-                }
-              }}
-              size="sm"
-            >
-              <div className="dark:hidden">{ctaLogoLight}</div>
-              <div className="hidden dark:block">{ctaLogoDark}</div>
-              {ctaText}
-            </Button>
+            {!isAuthenticated ? (
+              <>
+                <ModeToggle />
+                <Button
+                  className="text-sm font-medium px-4 h-9 rounded-md shadow-sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (onCtaClick) {
+                      onCtaClick();
+                    }
+                  }}
+                  size="sm"
+                >
+                  <div className="dark:hidden">{ctaLogoLight}</div>
+                  <div className="hidden dark:block">{ctaLogoDark}</div>
+                  {ctaText}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  {userPictureUrl && (
+                    <Avatar>
+                      <AvatarImage src={userPictureUrl} alt={userName} />
+                      <AvatarFallback>{userName?.[0] || "U"}</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <span className="text-sm font-medium">{userName}</span>
+                </div>
+                <ModeToggle />
+              </>
+            )}
           </div>
         </div>
       </header>
