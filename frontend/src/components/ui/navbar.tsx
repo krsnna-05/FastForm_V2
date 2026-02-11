@@ -14,7 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { FormIcon } from "lucide-react";
+import { Building2, FormIcon, LogOutIcon } from "lucide-react";
 import { ModeToggle } from "../theme-switch";
 import { Avatar, AvatarImage, AvatarFallback } from "./avatar";
 import {
@@ -341,12 +341,16 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                       <span className="text-sm font-medium">{userName}</span>
                     </div>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem>Dashboard</DropdownMenuItem>
+                  <DropdownMenuContent className="w-48">
+                    <DropdownMenuItem>
+                      <Building2 />
+                      Workspace
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       className=" hover:text-destructive! hover:bg-destructive/20!"
                       onClick={onLogoutClick}
                     >
+                      <LogOutIcon className=" group-hover:text-destructive" />
                       Logout
                     </DropdownMenuItem>
                   </DropdownMenuContent>

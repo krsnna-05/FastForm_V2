@@ -15,6 +15,7 @@ import useAuthStore from "@/store/auth.store";
 
 type AuthStatus = {
   success: boolean;
+  successMessage?: string;
   error: string | null;
   state: "pending" | "done" | "error";
 };
@@ -62,17 +63,21 @@ const AuthCallback = () => {
     const performAuth = async () => {
       try {
         const res = await authService.authCallback(code);
-        setAuthStatus({
-          success: true,
-          error: null,
-          state: "done",
-        });
-        login({
-          userId: res.user.userId,
-          name: res.user.name,
-          email: res.user.email,
-          pictureUrl: res.user.profile,
-        });
+
+        setTimeout(() => {
+          setAuthStatus({
+            success: true,
+            successMessage: res.message,
+            error: null,
+            state: "done",
+          });
+          login({
+            userId: res.user.userId,
+            name: res.user.name,
+            email: res.user.email,
+            pictureUrl: res.user.profile,
+          });
+        }, 1500);
       } catch (err) {
         console.error("Auth callback error:", err);
         setAuthStatus({
@@ -100,6 +105,10 @@ const AuthCallback = () => {
       return () => clearTimeout(timer);
     }
   }, [authStatus.state, countdown, navigate]);
+
+  useEffect(() => {
+    console.log("Auth status changed:", authStatus);
+  }, [authStatus]);
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background p-4 font-sans">
@@ -142,7 +151,7 @@ const AuthCallback = () => {
                     animate={{ scale: 1 }}
                     className=" p-2 rounded-full"
                   >
-                    <CheckCircle2 className="w-12 h-12 text-primary" />
+                    <CheckCircle2 className="w-12 h-12 text-green-500" />
                   </motion.div>
                 )}
                 {authStatus.state === "error" && (
@@ -168,7 +177,9 @@ const AuthCallback = () => {
               >
                 <CardTitle className="text-xl font-semibold">
                   {authStatus.state === "pending" && "Verifying session"}
-                  {authStatus.state === "done" && "Identity Verified"}
+                  {authStatus.state === "done" &&
+                    authStatus.successMessage &&
+                    authStatus.successMessage}
                   {authStatus.state === "error" && "Access Denied"}
                 </CardTitle>
                 <CardDescription className="mt-2 text-muted-foreground px-4">
@@ -201,7 +212,7 @@ const AuthCallback = () => {
                   <motion.div
                     initial={{ width: "0%" }}
                     animate={{ width: "100%" }}
-                    className={`h-full ${authStatus.state === "done" ? "bg-primary" : "bg-destructive"}`}
+                    className={`h-full ${authStatus.state === "done" ? "bg-green-500" : "bg-destructive"}`}
                   />
                 )}
               </AnimatePresence>
