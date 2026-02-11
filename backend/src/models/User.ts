@@ -3,7 +3,6 @@ import type User from "../types/User.DB";
 
 const UserSchema = new mongoose.Schema<User>({
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
   name: { type: String, required: true },
   accessToken: { type: String },
   refreshToken: { type: String },

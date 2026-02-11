@@ -35,6 +35,8 @@ class AuthService {
     const { tokens } = await this.oAuth2Client.getToken(code);
 
     this.oAuth2Client.setCredentials(tokens);
+
+    return tokens;
   };
 
   generateJWTToken = (user: JWTUserPayload): string => {

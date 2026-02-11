@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import AuthService from "../services/auth.service";
 import GoogleApiService from "../services/googleapi.service";
+import DBService from "../services/DB.service";
 
 const auth = async (req: Request, res: Response) => {
   try {
@@ -55,7 +56,15 @@ const authCallback = async (req: Request, res: Response) => {
 
     const authService = new AuthService();
 
-    await authService.setCredentials(code);
+    const tokens = await authService.setCredentials(code);
+
+    if (!tokens || !tokens.access_token || !tokens.refresh_token) {
+      return res.status(400).json({
+        success: false,
+        error: "invalid_grant",
+        message: "Failed to exchange authorization code",
+      });
+    }
 
     const googleApiService = new GoogleApiService(
       authService.getoAuth2Client(),
@@ -63,12 +72,63 @@ const authCallback = async (req: Request, res: Response) => {
 
     const userInfo = await googleApiService.getUserInfo();
 
-    console.log("User info retrieved from Google:", userInfo);
+    const isUserExists = await DBService.checkIfUserExistswithEmail(
+      userInfo.email,
+    );
+
+    if (isUserExists) {
+      const JWTToken = authService.generateJWTToken({
+        userId: userInfo.userId,
+        name: userInfo.name,
+        email: userInfo.email,
+      });
+
+      await DBService.updateUserAccessToken(
+        userInfo.userId,
+        tokens.access_token,
+      );
+
+      const userId = await DBService.getUserIdByEmail(userInfo.email);
+
+      return res.json({
+        success: true,
+        message: "Authentication successful",
+        user: {
+          userId: userId,
+          name: userInfo.name,
+          email: userInfo.email,
+        },
+        JWTToken,
+      });
+    }
+
+    const isUserAdded = await DBService.addUser({
+      email: userInfo.email,
+      name: userInfo.name,
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      profilePictureUrl: userInfo.profilePictureUrl,
+    });
+
+    if (!isUserAdded) {
+      return res.status(500).json({
+        success: false,
+        error: "user_creation_failed",
+        message: "Failed to create user in the database",
+      });
+    }
+
+    const JWTToken = authService.generateJWTToken({
+      userId: userInfo.userId,
+      name: userInfo.name,
+      email: userInfo.email,
+    });
 
     return res.json({
       success: true,
       message: "Authentication successful",
       user: userInfo,
+      JWTToken,
     });
   } catch (error) {
     console.error("Auth callback error:", error);

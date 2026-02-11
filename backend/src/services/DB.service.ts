@@ -1,17 +1,29 @@
 import UserModel from "../models/User";
 
-type addUserParams = {
-  user: {
-    name: string;
-    email: string;
-    password: string;
-    accessToken?: string;
-    refreshToken?: string;
-    profilePictureUrl?: string;
-  };
+type user = {
+  name: string;
+  email: string;
+  accessToken?: string;
+  refreshToken?: string;
+  profilePictureUrl?: string;
 };
 
 class DBService {
+  getUserIdByEmail = async (email: string): Promise<string | null> => {
+    try {
+      const user = await UserModel.findOne({ email }).exec();
+
+      if (!user) {
+        return null;
+      }
+
+      return user._id.toString();
+    } catch (error) {
+      console.error("Error fetching user by email:", error);
+      throw error;
+    }
+  };
+
   checkIfUserExistswithId = async (userId: string): Promise<boolean> => {
     try {
       const user = await UserModel.findById(userId).exec();
@@ -54,10 +66,12 @@ class DBService {
     }
   };
 
-  addUser = async ({ user }: addUserParams): Promise<void> => {
+  addUser = async (user: user): Promise<boolean> => {
     try {
       const newUser = new UserModel(user);
       await newUser.save();
+
+      return true;
     } catch (error) {
       console.error("Error adding user to the database:", error);
       throw error;

@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import authService from "@/services/auth.service";
+import { useNavigate } from "react-router";
 
 type AuthStatus = {
   success: boolean;
@@ -25,6 +26,7 @@ const AuthCallback = () => {
     state: "pending",
   });
   const [countdown, setCountdown] = useState(3);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -74,20 +76,18 @@ const AuthCallback = () => {
 
   useEffect(() => {
     if (authStatus.state === "done") {
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            window.location.href = "/";
-            return 0;
-          }
-          return prev - 1;
-        });
+      if (countdown <= 0) {
+        navigate("/");
+        return;
+      }
+
+      const timer = setTimeout(() => {
+        setCountdown((prev) => prev - 1);
       }, 1000);
 
-      return () => clearInterval(interval);
+      return () => clearTimeout(timer);
     }
-  }, [authStatus.state]);
+  }, [authStatus.state, countdown, navigate]);
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background p-4 font-sans">
