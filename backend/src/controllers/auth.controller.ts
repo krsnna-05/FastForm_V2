@@ -92,7 +92,7 @@ const authCallback = async (req: Request, res: Response) => {
 
       return res.json({
         success: true,
-        message: "Authentication successful",
+        message: "User Creation Successful",
         user: {
           userId: userId,
           name: userInfo.name,
@@ -126,7 +126,7 @@ const authCallback = async (req: Request, res: Response) => {
 
     return res.json({
       success: true,
-      message: "Authentication successful",
+      message: "Authentication Successful",
       user: userInfo,
       JWTToken,
     });

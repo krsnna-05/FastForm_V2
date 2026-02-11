@@ -11,6 +11,7 @@ import { useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import authService from "@/services/auth.service";
 import { useNavigate } from "react-router";
+import useAuthStore from "@/store/auth.store";
 
 type AuthStatus = {
   success: boolean;
@@ -27,6 +28,7 @@ const AuthCallback = () => {
   });
   const [countdown, setCountdown] = useState(3);
   const navigate = useNavigate();
+  const { login } = useAuthStore();
 
   useEffect(() => {
     const code = searchParams.get("code");
