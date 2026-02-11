@@ -9,6 +9,7 @@ import { FormIcon, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
+import authService from "@/services/auth.service";
 
 type AuthStatus = {
   success: boolean;
@@ -23,21 +24,70 @@ const AuthCallback = () => {
     error: null,
     state: "pending",
   });
+  const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
     const code = searchParams.get("code");
     const error = searchParams.get("error");
 
-    const timeout = setTimeout(() => {
-      if (error) {
-        setAuthStatus({ success: false, error, state: "error" });
-      } else if (code) {
-        setAuthStatus({ success: true, error: null, state: "done" });
-      }
-    }, 5000);
+    if (error) {
+      setAuthStatus({
+        success: false,
+        error: `Authentication failed: ${error}`,
+        state: "error",
+      });
+      return;
+    }
 
-    return () => clearTimeout(timeout);
+    if (!code) {
+      setAuthStatus({
+        success: false,
+        error: "Authentication code not found in URL.",
+        state: "error",
+      });
+      return;
+    }
+
+    console.log("Received auth code:", code);
+    console.log("Initiating auth callback with code:", code);
+
+    const performAuth = async () => {
+      try {
+        await authService.authCallback(code);
+        setAuthStatus({
+          success: true,
+          error: null,
+          state: "done",
+        });
+      } catch (err) {
+        console.error("Auth callback error:", err);
+        setAuthStatus({
+          success: false,
+          error: "Failed to authenticate",
+          state: "error",
+        });
+      }
+    };
+
+    performAuth();
   }, [searchParams]);
+
+  useEffect(() => {
+    if (authStatus.state === "done") {
+      const interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            window.location.href = "/";
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [authStatus.state]);
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background p-4 font-sans">
@@ -154,7 +204,9 @@ const AuthCallback = () => {
         transition={{ delay: 0.5 }}
         className="mt-6 text-xs text-muted-foreground font-medium uppercase tracking-widest"
       >
-        Secure Redirect
+        {authStatus.state === "pending" && "Loading..."}
+        {authStatus.state === "done" && `Redirecting iN ${countdown}...`}
+        {authStatus.state === "error" && "Please try again"}
       </motion.p>
     </div>
   );

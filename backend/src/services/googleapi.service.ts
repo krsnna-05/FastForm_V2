@@ -14,9 +14,7 @@ class GoogleApiService {
         auth: this.oAuth2Client,
         version: "v2",
       });
-
       const { data } = await oauth2.userinfo.get();
-      console.log("Fetched user info from Google:", data);
       return data;
     } catch (error: unknown) {
       console.error("Error fetching user info from Google:", error);

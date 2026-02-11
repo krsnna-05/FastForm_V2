@@ -15,6 +15,26 @@ class AuthService {
       },
     });
   };
+
+  authCallback = async (code: string) => {
+    try {
+      const response = await fetch(
+        `${envConfig.BACKEND_URI}/api/auth/callback?code=${encodeURIComponent(code)}`,
+        {
+          method: "POST",
+        },
+      );
+
+      const data = await response.json();
+      console.log("Auth callback response:", data);
+
+      if (data.success) {
+        localStorage.setItem("fastform_jwt_token", JSON.stringify(data.user));
+      }
+    } catch (error) {
+      console.error("Auth callback error:", error);
+    }
+  };
 }
 
 export default new AuthService();

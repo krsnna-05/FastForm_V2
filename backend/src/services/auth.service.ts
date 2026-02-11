@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { envConfig, googleAuthConfig, googleAuthScopes } from "../config/env";
 import JWTUserPayload from "../types/User.JWT";
 
-class authService {
+class AuthService {
   private oAuth2Client = new google.auth.OAuth2(
     googleAuthConfig.GOOGLE_AUTH_CLIENT_ID,
     googleAuthConfig.GOOGLE_AUTH_CLIENT_SECRET,
@@ -51,4 +51,4 @@ class authService {
   };
 }
 
-export default authService;
+export default AuthService;

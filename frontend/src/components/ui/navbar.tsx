@@ -19,7 +19,11 @@ import { ModeToggle } from "../theme-switch";
 
 // Simple logo component for the navbar
 const Logo = () => {
-  return <FormIcon className=" text-primary" />;
+  return (
+    <div className="bg-primary p-2 rounded-xl">
+      <FormIcon className="w-5 h-5 text-primary-foreground" />
+    </div>
+  );
 };
 
 const CtaLogo = ({ varient }: { varient: "dark" | "light" }) => {

@@ -1,17 +1,18 @@
 import { Request, Response } from "express";
-import authService from "../services/auth.service";
+import AuthService from "../services/auth.service";
+import GoogleApiService from "../services/googleapi.service";
 
 const auth = async (req: Request, res: Response) => {
   try {
     const authHeader = req.headers.authorization;
-    const authServiceInstance = new authService();
+    const authService = new AuthService();
 
     if (authHeader) {
       const token = authHeader.startsWith("Bearer ")
         ? authHeader.slice("Bearer ".length)
         : authHeader;
 
-      const payload = await authServiceInstance.authorizeWithJWTToken(token);
+      const payload = await authService.authorizeWithJWTToken(token);
 
       return res.json({
         success: true,
@@ -33,21 +34,48 @@ const auth = async (req: Request, res: Response) => {
 };
 
 const googleAuth = async (req: Request, res: Response) => {
-  const authServiceInstance = new authService();
+  const authService = new AuthService();
 
-  const redirectURL = authServiceInstance.getRedirectURL();
+  const redirectURL = authService.getRedirectURL();
   console.log("Redirecting to Google OAuth URL:", redirectURL);
 
   return res.redirect(redirectURL);
 };
 
-const authCallback = (req: Request, res: Response) => {
-  const { code } = req.body;
+const authCallback = async (req: Request, res: Response) => {
+  try {
+    const { code } = req.query;
 
-  if (!code) {
+    if (!code || typeof code !== "string") {
+      return res.status(400).json({
+        success: false,
+        error: "auth_code_required",
+      });
+    }
+
+    const authService = new AuthService();
+
+    await authService.setCredentials(code);
+
+    const googleApiService = new GoogleApiService(
+      authService.getoAuth2Client(),
+    );
+
+    const userInfo = await googleApiService.getUserInfo();
+
+    console.log("User info retrieved from Google:", userInfo);
+
+    return res.json({
+      success: true,
+      message: "Authentication successful",
+      user: userInfo,
+    });
+  } catch (error) {
+    console.error("Auth callback error:", error);
     return res.status(400).json({
       success: false,
-      error: "auth_code_required",
+      error: "invalid_grant",
+      message: "Failed to exchange authorization code",
     });
   }
 };
