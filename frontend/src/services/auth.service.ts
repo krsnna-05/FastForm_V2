@@ -6,13 +6,9 @@ class AuthService {
   };
 
   authorizeWithJWTToken = async () => {
-    console.log("Attempting to authorize with JWT token...");
-
     const lastUserData = JSON.parse(
       localStorage.getItem("fastform_last_user") || "null",
     );
-
-    console.log("Found last user data in localStorage:", lastUserData);
 
     if (!lastUserData || !lastUserData.user || !lastUserData.JWTToken) {
       return;

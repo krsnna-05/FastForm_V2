@@ -10,9 +10,6 @@ const Protected = ({ children }: ProtectedProps) => {
   const { isAuthenticated, login } = useAuthStore();
 
   useEffect(() => {
-    console.log("Checking authentication status...");
-    console.log("Current authentication status:", isAuthenticated);
-
     if (isAuthenticated) return;
 
     // automated login through existing tokens in localStorage

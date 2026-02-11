@@ -55,7 +55,6 @@ const googleAuth = async (req: Request, res: Response) => {
   const authService = new AuthService();
 
   const redirectURL = authService.getRedirectURL();
-  console.log("Redirecting to Google OAuth URL:", redirectURL);
 
   return res.redirect(redirectURL);
 };

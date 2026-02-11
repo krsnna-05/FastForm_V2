@@ -17,6 +17,12 @@ import { cn } from "@/lib/utils";
 import { FormIcon } from "lucide-react";
 import { ModeToggle } from "../theme-switch";
 import { Avatar, AvatarImage, AvatarFallback } from "./avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./dropdown-menu";
 
 // Simple logo component for the navbar
 const Logo = () => {
@@ -141,9 +147,11 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   ctaLogoDark?: React.ReactNode;
   onSignInClick?: () => void;
   onCtaClick?: () => void;
+  onLogoutClick?: () => void;
   isAuthenticated?: boolean;
   userName?: string;
   userPictureUrl?: string;
+  userImageFallback?: string;
 }
 
 // Default navigation links
@@ -166,18 +174,18 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       ctaLogoLight = <CtaLogo varient="light" />,
       ctaLogoDark = <CtaLogo varient="dark" />,
       onSignInClick,
+      onLogoutClick,
       onCtaClick,
       isAuthenticated = false,
       userName,
       userPictureUrl,
+      userImageFallback,
       ...props
     },
     ref,
   ) => {
     const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef<HTMLElement>(null);
-
-    console.log(userName, userPictureUrl);
 
     useEffect(() => {
       const checkWidth = () => {
@@ -319,15 +327,30 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
               </>
             ) : (
               <>
-                <div className="flex items-center gap-2">
-                  {userPictureUrl && (
-                    <Avatar>
-                      <AvatarImage src={userPictureUrl} alt={userName} />
-                      <AvatarFallback>{userName?.[0] || "U"}</AvatarFallback>
-                    </Avatar>
-                  )}
-                  <span className="text-sm font-medium">{userName}</span>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      {userPictureUrl && (
+                        <Avatar>
+                          <AvatarImage src={userPictureUrl} alt={userName} />
+                          <AvatarFallback>
+                            {userImageFallback || userName?.[0] || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      <span className="text-sm font-medium">{userName}</span>
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem>Dashboard</DropdownMenuItem>
+                    <DropdownMenuItem
+                      className=" hover:text-destructive! hover:bg-destructive/20!"
+                      onClick={onLogoutClick}
+                    >
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <ModeToggle />
               </>
             )}

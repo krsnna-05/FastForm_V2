@@ -59,9 +59,6 @@ const AuthCallback = () => {
 
     hasRequestedRef.current = true;
 
-    console.log("Received auth code:", code);
-    console.log("Initiating auth callback with code:", code);
-
     const performAuth = async () => {
       try {
         const res = await authService.authCallback(code);
