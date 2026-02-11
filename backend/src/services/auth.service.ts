@@ -10,6 +10,10 @@ class authService {
     googleAuthConfig.GOOGLE_AUTH_REDIRECT_URL,
   );
 
+  getoAuth2Client = () => {
+    return this.oAuth2Client;
+  };
+
   getRedirectURL = (): string => {
     return this.oAuth2Client.generateAuthUrl({
       access_type: "offline",
@@ -27,14 +31,10 @@ class authService {
     return payload;
   };
 
-  getTokens = async (code: string) => {
-    try {
-      const { tokens } = await this.oAuth2Client.getToken(code);
-      return tokens;
-    } catch (error) {
-      console.error("Error exchanging code for tokens:", error);
-      throw error;
-    }
+  setCredentials = async (code: string) => {
+    const { tokens } = await this.oAuth2Client.getToken(code);
+
+    this.oAuth2Client.setCredentials(tokens);
   };
 
   generateJWTToken = (user: JWTUserPayload): string => {
@@ -51,4 +51,4 @@ class authService {
   };
 }
 
-export default new authService();
+export default authService;

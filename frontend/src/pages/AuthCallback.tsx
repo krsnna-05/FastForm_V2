@@ -8,13 +8,12 @@ import {
 import { FormIcon, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
-
-type AuthState = "done" | "pending" | "error";
+import { motion, AnimatePresence } from "motion/react";
 
 type AuthStatus = {
   success: boolean;
   error: string | null;
-  state: AuthState;
+  state: "pending" | "done" | "error";
 };
 
 const AuthCallback = () => {
@@ -29,72 +28,134 @@ const AuthCallback = () => {
     const code = searchParams.get("code");
     const error = searchParams.get("error");
 
-    // timeout to simulate processing delay and show the pending state
     const timeout = setTimeout(() => {
       if (error) {
-        setAuthStatus({
-          success: false,
-          error: error,
-          state: "error",
-        });
+        setAuthStatus({ success: false, error, state: "error" });
       } else if (code) {
-        setAuthStatus({
-          success: true,
-          error: null,
-          state: "done",
-        });
+        setAuthStatus({ success: true, error: null, state: "done" });
       }
-    }, 1500);
+    }, 5000);
 
     return () => clearTimeout(timeout);
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background p-4">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background p-4 font-sans">
       {/* Brand Header */}
-      <div className="flex items-center gap-2 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-2 mb-8"
+      >
         <div className="bg-primary p-2 rounded-xl">
-          <FormIcon className="w-6 h-6 text-primary-foreground" />
+          <FormIcon className="w-5 h-5 text-primary-foreground" />
         </div>
         <span className="text-xl font-bold tracking-tight">FastForms</span>
-      </div>
+      </motion.div>
 
-      <Card className="w-full max-w-sm border-border/50 shadow-xl animate-in zoom-in-95 duration-300">
-        <CardHeader className="text-center space-y-1">
-          <div className="flex justify-center mb-2">
-            {authStatus.state === "pending" && (
-              <Loader2 className="w-10 h-10 text-primary animate-spin" />
-            )}
-            {authStatus.state === "done" && (
-              <CheckCircle2 className="w-10 h-10 text-primary animate-in zoom-in duration-300" />
-            )}
-            {authStatus.state === "error" && (
-              <AlertCircle className="w-10 h-10 text-destructive animate-in shake duration-300" />
-            )}
-          </div>
-          <CardTitle className="text-2xl font-semibold tracking-tight">
-            {authStatus.state === "pending" && "Verifying session"}
-            {authStatus.state === "done" && "Welcome back"}
-            {authStatus.state === "error" && "Authentication failed"}
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            {authStatus.state === "pending" &&
-              "Please wait while we secure your connection."}
-            {authStatus.state === "done" &&
-              "You have successfully authenticated."}
-            {authStatus.state === "error" &&
-              (authStatus.error || "An unexpected error occurred.")}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="flex flex-col items-center pb-8">
-          {authStatus.state === "pending" && (
-            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-primary animate-progress w-1/2" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="w-full max-w-sm"
+      >
+        <Card className="border-border/40 shadow-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="text-center pt-8">
+            <div className="flex justify-center mb-4 h-12">
+              <AnimatePresence mode="wait">
+                {authStatus.state === "pending" && (
+                  <motion.div
+                    key="pending-icon"
+                    initial={{ opacity: 0, rotate: -45 }}
+                    animate={{ opacity: 1, rotate: 0 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                  >
+                    <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                  </motion.div>
+                )}
+                {authStatus.state === "done" && (
+                  <motion.div
+                    key="done-icon"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className=" p-2 rounded-full"
+                  >
+                    <CheckCircle2 className="w-12 h-12 text-primary" />
+                  </motion.div>
+                )}
+                {authStatus.state === "error" && (
+                  <motion.div
+                    key="error-icon"
+                    initial={{ x: 10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 500 }}
+                  >
+                    <AlertCircle className="w-12 h-12 text-destructive" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={authStatus.state}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <CardTitle className="text-xl font-semibold">
+                  {authStatus.state === "pending" && "Verifying session"}
+                  {authStatus.state === "done" && "Identity Verified"}
+                  {authStatus.state === "error" && "Access Denied"}
+                </CardTitle>
+                <CardDescription className="mt-2 text-muted-foreground px-4">
+                  {authStatus.state === "pending" &&
+                    "Checking credentials with FastForms..."}
+                  {authStatus.state === "done" &&
+                    "Welcome back! Preparing your workspace."}
+                  {authStatus.state === "error" &&
+                    (authStatus.error || "Authentication failed.")}
+                </CardDescription>
+              </motion.div>
+            </AnimatePresence>
+          </CardHeader>
+
+          <CardContent className="pb-8 pt-2">
+            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden relative">
+              <AnimatePresence>
+                {authStatus.state === "pending" ? (
+                  <motion.div
+                    initial={{ left: "-100%" }}
+                    animate={{ left: "100%" }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 1.5,
+                      ease: "linear",
+                    }}
+                    className="absolute inset-0 w-1/3 bg-primary rounded-full"
+                  />
+                ) : (
+                  <motion.div
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    className={`h-full ${authStatus.state === "done" ? "bg-primary" : "bg-destructive"}`}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="mt-6 text-xs text-muted-foreground font-medium uppercase tracking-widest"
+      >
+        Secure Redirect
+      </motion.p>
     </div>
   );
 };
