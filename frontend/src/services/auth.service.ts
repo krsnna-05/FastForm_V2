@@ -24,13 +24,16 @@ class AuthService {
           method: "POST",
         },
       );
-
       const data = await response.json();
-      console.log("Auth callback response:", data);
 
       if (data.success) {
-        localStorage.setItem("fastform_jwt_token", JSON.stringify(data.user));
+        localStorage.setItem(
+          "fastform_last_user",
+          JSON.stringify({ user: data.user, JWTToken: data.JWTToken }),
+        );
       }
+
+      return data;
     } catch (error) {
       console.error("Auth callback error:", error);
     }

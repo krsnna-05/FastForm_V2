@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import AuthService from "../services/auth.service";
 import GoogleApiService from "../services/googleapi.service";
 import DBService from "../services/DB.service";
+import { profile } from "node:console";
 
 const auth = async (req: Request, res: Response) => {
   try {
@@ -88,7 +89,17 @@ const authCallback = async (req: Request, res: Response) => {
         tokens.access_token,
       );
 
-      const userId = await DBService.getUserIdByEmail(userInfo.email);
+      const userResult = await DBService.getUserByEmail(userInfo.email);
+
+      if (!userResult || !userResult.user) {
+        return res.status(500).json({
+          success: false,
+          error: "user_fetch_failed",
+          message: "Failed to fetch user from the database",
+        });
+      }
+
+      const { user, userId } = userResult;
 
       return res.json({
         success: true,
@@ -97,6 +108,7 @@ const authCallback = async (req: Request, res: Response) => {
           userId: userId,
           name: userInfo.name,
           email: userInfo.email,
+          profile: user.profilePictureUrl,
         },
         JWTToken,
       });

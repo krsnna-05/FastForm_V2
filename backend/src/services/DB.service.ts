@@ -1,4 +1,5 @@
 import UserModel from "../models/User";
+import User from "../types/User.DB";
 
 type user = {
   name: string;
@@ -9,7 +10,9 @@ type user = {
 };
 
 class DBService {
-  getUserIdByEmail = async (email: string): Promise<string | null> => {
+  getUserByEmail = async (
+    email: string,
+  ): Promise<{ user: User; userId: string } | null> => {
     try {
       const user = await UserModel.findOne({ email }).exec();
 
@@ -17,7 +20,7 @@ class DBService {
         return null;
       }
 
-      return user._id.toString();
+      return { user: user, userId: user._id.toString() };
     } catch (error) {
       console.error("Error fetching user by email:", error);
       throw error;

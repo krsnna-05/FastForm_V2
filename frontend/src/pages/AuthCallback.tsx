@@ -57,11 +57,17 @@ const AuthCallback = () => {
 
     const performAuth = async () => {
       try {
-        await authService.authCallback(code);
+        const res = await authService.authCallback(code);
         setAuthStatus({
           success: true,
           error: null,
           state: "done",
+        });
+        login({
+          userId: res.user.userId,
+          name: res.user.name,
+          email: res.user.email,
+          pictureUrl: res.user.profile,
         });
       } catch (err) {
         console.error("Auth callback error:", err);
