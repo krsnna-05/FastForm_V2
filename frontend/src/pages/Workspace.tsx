@@ -1,5 +1,9 @@
 import { Button } from "@/components/ui/button";
+import { DrawerTrigger } from "@/components/ui/drawer";
 import { Plus, SquareStack } from "lucide-react";
+import { useState } from "react";
+import { Drawer } from "@/components/ui/drawer";
+import CreateForm from "@/components/workspace/CreateForm";
 
 const Workspace = () => {
   return (
@@ -15,13 +19,18 @@ const Workspace = () => {
               Create and manage your forms in one place
             </p>
           </div>
-          <Button
-            size="lg"
-            className="w-full md:w-auto gap-2 shadow-md hover:shadow-lg transition-shadow"
-          >
-            <Plus className="h-4 w-4" />
-            Create Form
-          </Button>
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button
+                size="lg"
+                className="w-full md:w-auto gap-2 shadow-md hover:shadow-lg transition-shadow"
+              >
+                <Plus className="h-4 w-4" />
+                Create Form
+              </Button>
+            </DrawerTrigger>
+            <CreateForm />
+          </Drawer>
         </div>
 
         {/* Empty State */}
