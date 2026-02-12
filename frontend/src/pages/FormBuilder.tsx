@@ -6,7 +6,7 @@ import { useSearchParams } from "react-router";
 import { useNavigate } from "react-router";
 
 const FormBuilder = () => {
-  const { messages } = useChat();
+  const { messages, setMessages } = useChat();
   const navigate = useNavigate();
 
   const [searchParams] = useSearchParams();
@@ -30,7 +30,7 @@ const FormBuilder = () => {
 
   return (
     <div className=" flex h-screen ">
-      <SideBar />
+      <SideBar messages={messages} setMessages={setMessages} />
       <FormPreview />
     </div>
   );

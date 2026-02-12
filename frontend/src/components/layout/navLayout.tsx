@@ -26,7 +26,7 @@ const NavLayout = () => {
   };
 
   return (
-    <div className=" h-screen w-screen flex flex-col bg-background text-foreground">
+    <div className=" h-screen w-screen flex flex-col bg-background text-foreground overflow-hidden">
       <Navbar
         onCtaClick={authService.authorizeWithGoogle}
         isAuthenticated={isAuthenticated}
