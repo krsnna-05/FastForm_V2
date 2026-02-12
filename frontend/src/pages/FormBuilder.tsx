@@ -18,6 +18,7 @@ const FormBuilder = () => {
     const createFormRequest = JSON.parse(
       localStorage.getItem(`fastform_create_form_${formId}`) || "{}",
     );
+
     localStorage.removeItem(`fastform_create_form_${formId}`);
 
     console.log("Create Form Request:", createFormRequest);
