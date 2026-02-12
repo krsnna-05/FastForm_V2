@@ -68,7 +68,7 @@ const Feature = ({
   className,
 }: FeatureProps) => {
   return (
-    <section className={cn("py-32", className)}>
+    <section className={cn("py-32 px-3", className)}>
       <div className="container">
         {(label || title) && (
           <div className="mb-12 flex max-w-3xl flex-col gap-4">

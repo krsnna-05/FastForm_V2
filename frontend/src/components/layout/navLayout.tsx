@@ -34,6 +34,7 @@ const NavLayout = () => {
         userPictureUrl={User?.pictureUrl}
         onLogoutClick={handleLogout}
         userImageFallback={nameFallback}
+        navigationLinks={[]}
       />
       <Outlet />
     </div>

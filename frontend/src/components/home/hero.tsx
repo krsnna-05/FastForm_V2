@@ -1,8 +1,10 @@
-import { Wifi, Zap } from "lucide-react";
+import { Building2, Wifi, Zap } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
+import authService from "@/services/auth.service";
+import { Link } from "react-router";
 
 interface HeroProps {
   icon?: React.ReactNode;
@@ -18,6 +20,7 @@ interface HeroProps {
   imageSrc?: string;
   imageAlt?: string;
   className?: string;
+  isAuthenticated?: boolean;
 }
 
 const Hero = ({
@@ -33,9 +36,10 @@ const Hero = ({
   imageSrc = "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/placeholder-1.svg",
   imageAlt = "placeholder",
   className,
+  isAuthenticated,
 }: HeroProps) => {
   return (
-    <section className={cn("overflow-hidden py-32", className)}>
+    <section className={cn("overflow-hidden py-32 px-3", className)}>
       <div className="container">
         <div className="flex flex-col gap-5">
           <div className="relative flex flex-col gap-5">
@@ -59,11 +63,22 @@ const Hero = ({
               {description}
             </p>
             <div className="flex flex-col items-center justify-center gap-3 pt-3 pb-12">
-              <Button size="lg" asChild>
-                <a href={button.url}>
+              {!isAuthenticated && (
+                <Button
+                  size="lg"
+                  onClick={() => authService.authorizeWithGoogle()}
+                  className="hover:cursor-pointer"
+                >
                   {button.icon} {button.text}
-                </a>
-              </Button>
+                </Button>
+              )}
+              {isAuthenticated && (
+                <Button size="lg" asChild className="hover:cursor-pointer">
+                  <Link to="/workspace">
+                    <Building2 /> Go to Workspace
+                  </Link>
+                </Button>
+              )}
               {trustText && (
                 <div className="text-xs text-muted-foreground">{trustText}</div>
               )}

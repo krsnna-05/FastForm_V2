@@ -2,11 +2,13 @@ import { Feature } from "@/components/home/feature";
 import { Hero } from "@/components/home/hero";
 import { CtaLogo, Logo } from "@/components/ui/navbar";
 import authService from "@/services/auth.service";
+import useAuthStore from "@/store/auth.store";
 import { Bot, CheckCircle2, Sparkles, Zap } from "lucide-react";
 import { useTheme } from "next-themes";
 
 const Home = () => {
   const { resolvedTheme } = useTheme();
+  const { isAuthenticated } = useAuthStore();
 
   return (
     <div className="flex-1 w-full flex flex-col items-center justify-center">
@@ -22,6 +24,7 @@ const Home = () => {
         heading="Lovable For Google Forms"
         description="Create Google Forms by chatting. Transform your ideas into fully functional forms in seconds with our AI-powered form builder."
         trustText="Now Edit Your Google Faster and Better"
+        isAuthenticated={isAuthenticated}
       />
       <Feature
         label="Why FastForms"
