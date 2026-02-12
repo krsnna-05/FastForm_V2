@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   DrawerClose,
   DrawerContent,
@@ -21,7 +21,7 @@ import { v4 } from "uuid";
 import { useNavigate } from "react-router";
 
 const CreateForm = () => {
-  const [text, setText] = React.useState("");
+  const [text, setText] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = (message: PromptInputMessage) => {
@@ -34,7 +34,10 @@ const CreateForm = () => {
       }),
     );
 
-    navigate(`/workspace/form/edit?formId=${v4()}`);
+    const newFormId = v4();
+    const formEditURL = `/workspace/form/edit?formId=${newFormId}`;
+
+    navigate(formEditURL); // Navigate to the form edit page with the new form ID
   };
 
   return (

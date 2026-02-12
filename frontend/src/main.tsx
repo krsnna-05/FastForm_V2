@@ -8,6 +8,7 @@ import { ThemeProvider } from "./components/theme-provider.tsx";
 import AuthCallback from "./pages/AuthCallback.tsx";
 import Protected from "./components/layout/protected.tsx";
 import Workspace from "./pages/Workspace.tsx";
+import FormBuilder from "./pages/FormBuilder.tsx";
 
 const router = createBrowserRouter([
   {
@@ -22,6 +23,14 @@ const router = createBrowserRouter([
         element: (
           <Protected>
             <Workspace />
+          </Protected>
+        ),
+      },
+      {
+        path: "/workspace/form/edit",
+        element: (
+          <Protected>
+            <FormBuilder />
           </Protected>
         ),
       },
