@@ -17,9 +17,12 @@ import {
 } from "../ai-elements/prompt-input";
 import { Sparkles, X } from "lucide-react";
 import { Button } from "../ui/button";
+import { v4 } from "uuid";
+import { useNavigate } from "react-router";
 
 const CreateForm = () => {
   const [text, setText] = React.useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = (message: PromptInputMessage) => {
     console.log("Form submitted with value:", message.text);
@@ -30,6 +33,8 @@ const CreateForm = () => {
         prompt: message.text,
       }),
     );
+
+    navigate(`/workspace/form/edit?formId=${v4()}`);
   };
 
   return (
