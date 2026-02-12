@@ -24,6 +24,12 @@ const CreateForm = () => {
   const handleSubmit = (message: PromptInputMessage) => {
     console.log("Form submitted with value:", message.text);
     // Here you would typically handle the form submission, e.g., send the data to your backend or update state
+    localStorage.setItem(
+      "fastform_create_form_request",
+      JSON.stringify({
+        prompt: message.text,
+      }),
+    );
   };
 
   return (
