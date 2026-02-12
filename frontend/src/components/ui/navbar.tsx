@@ -1,7 +1,6 @@
 "use client";
 
-import * as React from "react";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -240,9 +239,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                   className="flex items-center space-x-2 text-primary hover:text-primary/90 transition-colors cursor-pointer"
                 >
                   <div className="text-2xl">{logo}</div>
-                  <span className="hidden font-bold text-xl sm:inline-block">
-                    FastForm
-                  </span>
+                  <span className=" font-bold text-xl ">FastForm</span>
                 </button>
               </Link>
             </div>

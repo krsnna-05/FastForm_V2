@@ -15,11 +15,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: (
-          <Protected>
-            <Home />
-          </Protected>
-        ),
+        element: <Home />,
       },
       {
         path: "/workspace",
