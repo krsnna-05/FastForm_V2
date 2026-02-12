@@ -27,14 +27,15 @@ const CreateForm = () => {
   const handleSubmit = (message: PromptInputMessage) => {
     console.log("Form submitted with value:", message.text);
     // Here you would typically handle the form submission, e.g., send the data to your backend or update state
+    const newFormId = v4();
+
     localStorage.setItem(
-      "fastform_create_form_request",
+      `fastform_create_form_${newFormId}`,
       JSON.stringify({
         prompt: message.text,
       }),
     );
 
-    const newFormId = v4();
     const formEditURL = `/workspace/form/edit?formId=${newFormId}`;
 
     navigate(formEditURL); // Navigate to the form edit page with the new form ID
