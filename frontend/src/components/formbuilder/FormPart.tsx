@@ -1,6 +1,7 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { motion } from "motion/react";
 
 type TitlePartProps = {
   title: string;
@@ -15,6 +16,12 @@ type FieldBaseProps = {
 
 type ChoiceFieldProps = FieldBaseProps & {
   options: string[];
+};
+
+const fadeInUp = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.35, ease: "easeOut" },
 };
 
 const FieldLabel = ({ label, required }: FieldBaseProps) => {
@@ -38,22 +45,28 @@ const FieldDescription = ({ description }: { description?: string }) => {
 
 const FieldContainer = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="rounded-lg border border-border bg-card/70 p-4 shadow-sm">
+    <motion.div
+      {...fadeInUp}
+      className="rounded-lg border border-border bg-card/70 p-4 shadow-sm"
+    >
       <div className="flex flex-col gap-2">{children}</div>
-    </div>
+    </motion.div>
   );
 };
 
 const FormTitlePart = ({ title, description }: TitlePartProps) => {
   return (
-    <div className="rounded-lg border border-border bg-card/60 p-5 shadow-sm">
+    <motion.div
+      {...fadeInUp}
+      className="rounded-lg border border-border bg-card/60 p-5 shadow-sm"
+    >
       <h2 className="text-xl font-semibold text-foreground sm:text-2xl">
         {title}
       </h2>
       {description ? (
         <p className="mt-2 text-sm text-muted-foreground">{description}</p>
       ) : null}
-    </div>
+    </motion.div>
   );
 };
 
@@ -89,9 +102,12 @@ const RadioFieldPart = ({
       <FieldDescription description={description} />
       <div className="space-y-2">
         {options.map((option, index) => (
-          <label
+          <motion.label
             key={`${label}-radio-${index}`}
             className="flex items-center gap-2 text-sm text-foreground"
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.25, delay: index * 0.04 }}
           >
             <input
               type="radio"
@@ -100,7 +116,7 @@ const RadioFieldPart = ({
               className="h-4 w-4 accent-foreground"
             />
             <span>{option}</span>
-          </label>
+          </motion.label>
         ))}
       </div>
     </FieldContainer>
@@ -119,9 +135,12 @@ const CheckboxFieldPart = ({
       <FieldDescription description={description} />
       <div className="space-y-2">
         {options.map((option, index) => (
-          <label
+          <motion.label
             key={`${label}-checkbox-${index}`}
             className="flex items-center gap-2 text-sm text-foreground"
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.25, delay: index * 0.04 }}
           >
             <input
               type="checkbox"
@@ -129,7 +148,7 @@ const CheckboxFieldPart = ({
               className="h-4 w-4 accent-foreground"
             />
             <span>{option}</span>
-          </label>
+          </motion.label>
         ))}
       </div>
     </FieldContainer>

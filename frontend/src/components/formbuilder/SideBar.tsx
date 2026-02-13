@@ -31,6 +31,7 @@ type SideBarProps = {
   sendMessage: (message: UIMessage, options?: { body?: object }) => void;
   onSend: (message: UIMessage, mode: "ask" | "agent") => void;
   form: Form | {};
+  isLoading?: boolean;
 };
 
 const SideBar = ({
@@ -38,6 +39,7 @@ const SideBar = ({
   sendMessage,
   onSend,
   form,
+  isLoading = false,
 }: SideBarProps) => {
   const [text, setText] = useState("");
   const [aiMode, setAiMode] = useState<"ask" | "agent">("ask");
@@ -114,7 +116,7 @@ const SideBar = ({
           multiple
         >
           <PromptInputHeader className="border-b border-border/50 bg-muted/30 h-10 flex items-center justify-between gap-3 px-3">
-            <AIStatus state="available" />
+            <AIStatus state={isLoading ? "processing" : "available"} />
           </PromptInputHeader>
           <PromptInputBody>
             <PromptInputTextarea
@@ -156,7 +158,7 @@ const SideBar = ({
               </div>
             </PromptInputTools>
             <PromptInputSubmit
-              disabled={!text}
+              disabled={!text || isLoading}
               className="gap-2 shadow-md hover:shadow-lg transition-all"
             >
               <Sparkles className="h-4 w-4" />

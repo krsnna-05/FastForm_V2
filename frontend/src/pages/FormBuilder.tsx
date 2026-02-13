@@ -11,6 +11,7 @@ const API_ENDPOINT = "http://localhost:3000/api/form/edit";
 
 const FormBuilder = () => {
   const [form, setForm] = useState<Form | {}>({});
+  const [isLoading, setIsLoading] = useState(false);
   const hasInitializedRef = useRef(false);
 
   const transport = useMemo(
@@ -38,6 +39,7 @@ const FormBuilder = () => {
       return;
     }
 
+    setIsLoading(true);
     setMessages((prev) => [...prev, message]);
 
     try {
@@ -60,6 +62,7 @@ const FormBuilder = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let completionReceived = false;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -79,6 +82,12 @@ const FormBuilder = () => {
               console.log("Updating title to:", result.title);
 
               setForm((prev) => ({ ...prev, title: result.title }));
+            }
+
+            if (result.type === "update_description") {
+              console.log("Updating description to:", result.description);
+
+              setForm((prev) => ({ ...prev, description: result.description }));
             }
 
             if (result.type === "add_field") {
@@ -103,7 +112,7 @@ const FormBuilder = () => {
 
               console.log("Agent completed with message:", result.message);
               setMessages((prev) => [...prev, finalMessage]);
-              return;
+              completionReceived = true;
             }
           }
         }
@@ -112,8 +121,27 @@ const FormBuilder = () => {
       if (buffer.trim()) {
         console.log("Agent stream:", buffer);
       }
+
+      // If stream ended without completion message, add a default one
+      if (!completionReceived) {
+        console.log("Stream ended without completion message");
+        const defaultMessage: UIMessage = {
+          id: Date.now().toString(),
+          role: "assistant",
+          parts: [
+            {
+              type: "text",
+              text: "Form created successfully!",
+            },
+          ],
+        };
+        setMessages((prev) => [...prev, defaultMessage]);
+      }
+
+      setIsLoading(false);
     } catch (error) {
       console.log("Agent stream error:", error);
+      setIsLoading(false);
     }
   };
 
@@ -166,8 +194,9 @@ const FormBuilder = () => {
         sendMessage={sendMessage}
         onSend={handleSend}
         form={form}
+        isLoading={isLoading}
       />
-      <FormPreview form={form} />
+      <FormPreview form={form} isLoading={isLoading} />
     </div>
   );
 };

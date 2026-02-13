@@ -9,12 +9,14 @@ import {
   TextFieldPart,
 } from "@/components/formbuilder/FormPart";
 import type { Form, FormField } from "@/types/Form";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type FormPreviewProps = {
   form: Form | {};
+  isLoading?: boolean;
 };
 
-const FormPreview = ({ form }: FormPreviewProps) => {
+const FormPreview = ({ form, isLoading = false }: FormPreviewProps) => {
   const normalizedFields = useMemo(() => {
     const safeForm = form as Form;
     return (safeForm.fields || [])
@@ -31,60 +33,84 @@ const FormPreview = ({ form }: FormPreviewProps) => {
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6 sm:px-6">
         <FormTitlePart title={title} description={description} />
         {normalizedFields.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
-            Start by describing the form you want. Fields will appear here.
-          </div>
+          isLoading ? (
+            <>
+              <SkeletonField />
+            </>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
+              Start by describing the form you want. Fields will appear here.
+            </div>
+          )
         ) : (
-          normalizedFields.map((field) => {
-            const fieldType =
-              (field as FormField & { fieldType?: string }).fieldType ??
-              field.type;
+          <>
+            {normalizedFields.map((field) => {
+              const fieldType =
+                (field as FormField & { fieldType?: string }).fieldType ??
+                field.type;
 
-            if (fieldType === "text") {
-              return (
-                <TextFieldPart
-                  key={`${field.label}-${field.location}`}
-                  label={field.label}
-                  required={field.required}
-                />
-              );
-            }
+              if (fieldType === "text") {
+                return (
+                  <TextFieldPart
+                    key={`${field.label}-${field.location}`}
+                    label={field.label}
+                    required={field.required}
+                  />
+                );
+              }
 
-            if (fieldType === "para") {
-              return (
-                <ParaFieldPart
-                  key={`${field.label}-${field.location}`}
-                  label={field.label}
-                  required={field.required}
-                />
-              );
-            }
+              if (fieldType === "para") {
+                return (
+                  <ParaFieldPart
+                    key={`${field.label}-${field.location}`}
+                    label={field.label}
+                    required={field.required}
+                  />
+                );
+              }
 
-            if (fieldType === "radio" || fieldType === "single_choice") {
-              return (
-                <RadioFieldPart
-                  key={`${field.label}-${field.location}`}
-                  label={field.label}
-                  required={field.required}
-                  options={field.options || []}
-                />
-              );
-            }
+              if (fieldType === "radio" || fieldType === "single_choice") {
+                return (
+                  <RadioFieldPart
+                    key={`${field.label}-${field.location}`}
+                    label={field.label}
+                    required={field.required}
+                    options={field.options || []}
+                  />
+                );
+              }
 
-            if (fieldType === "checkbox" || fieldType === "multiple_choice") {
-              return (
-                <CheckboxFieldPart
-                  key={`${field.label}-${field.location}`}
-                  label={field.label}
-                  required={field.required}
-                  options={field.options || []}
-                />
-              );
-            }
+              if (fieldType === "checkbox" || fieldType === "multiple_choice") {
+                return (
+                  <CheckboxFieldPart
+                    key={`${field.label}-${field.location}`}
+                    label={field.label}
+                    required={field.required}
+                    options={field.options || []}
+                  />
+                );
+              }
 
-            return null;
-          })
+              return null;
+            })}
+            {isLoading && (
+              <>
+                <SkeletonField />
+              </>
+            )}
+          </>
         )}
+      </div>
+    </div>
+  );
+};
+
+const SkeletonField = () => {
+  return (
+    <div className="rounded-lg border border-border bg-card/70 p-4 shadow-sm">
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-5 w-2/5" />
+        <Skeleton className="h-9 w-full" />
       </div>
     </div>
   );

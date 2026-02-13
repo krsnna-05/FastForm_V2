@@ -156,13 +156,34 @@ const agentQuery = async (messages: UIMessage[], res: Response) => {
         messages: await convertToModelMessages(messages),
       });
 
+      let doneCalled = false;
+
       for await (const event of agentStream.fullStream) {
         if (event.type === "tool-result") {
           const toolResult = event.output;
           console.log("Tool result:", toolResult);
           res.write(JSON.stringify(toolResult) + "\n");
+
+          if (toolResult.type === "done") {
+            doneCalled = true;
+          }
         }
       }
+
+      // If agent finished without calling done, send a default completion message
+      if (!doneCalled) {
+        const doneResult = {
+          type: "done",
+          message: "Form created successfully!",
+        };
+        console.log(
+          "Agent finished without calling done. Sending default:",
+          doneResult,
+        );
+        res.write(JSON.stringify(doneResult) + "\n");
+      }
+
+      res.end();
     },
   });
 };
