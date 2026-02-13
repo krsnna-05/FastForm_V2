@@ -1,18 +1,16 @@
 import {
   convertToModelMessages,
-  createUIMessageStream,
-  Output,
   streamText,
   ToolLoopAgent,
   stepCountIs,
   tool,
+  createUIMessageStream,
 } from "ai";
 import { ollama } from "ai-sdk-ollama";
 import { Request, Response } from "express";
 import type { Form } from "../types/Form.DB";
 import type { UIMessage } from "ai";
 import prompts from "../prompts.json";
-import { OperationSchema } from "../types/Operation";
 import z from "zod";
 
 interface EditFormRequest {
@@ -29,17 +27,15 @@ const askQuery = async (messages: UIMessage[], res: Response) => {
     messages: await convertToModelMessages(messages),
     system: prompts.ask,
   });
-
   result.pipeUIMessageStreamToResponse(res);
 };
 
-const agentQuery = async (messages: UIMessage[]) => {
+const agentQuery = async (messages: UIMessage[], res: Response) => {
   const formAgent = new ToolLoopAgent({
     model: ollama("ministral-3:3b"),
-
-    // Safety limit
     stopWhen: stepCountIs(20),
-
+    instructions: prompts.agent,
+    temperature: 0,
     tools: {
       update_title: tool({
         description: "Update the form title",
@@ -47,12 +43,7 @@ const agentQuery = async (messages: UIMessage[]) => {
           title: z.string(),
         }),
         execute: async ({ title }) => {
-          const operation = {
-            type: "update_title",
-            title,
-          };
-
-          console.log("Operation:", operation);
+          const operation = { type: "update_title", title };
           return operation;
         },
       }),
@@ -63,25 +54,16 @@ const agentQuery = async (messages: UIMessage[]) => {
           description: z.string(),
         }),
         execute: async ({ description }) => {
-          const operation = {
-            type: "update_description",
-            description,
-          };
-
-          console.log("Operation:", operation);
+          const operation = { type: "update_description", description };
           return operation;
         },
       }),
 
       update_text_field: tool({
-        description: "Add a single-line text field",
+        description: "Add or update a single-line text field",
         inputSchema: z.object({
           id: z.string(),
-          new: z
-            .boolean()
-            .describe(
-              "Whether this is a new field or an update to an existing field",
-            ),
+          new: z.boolean(),
           label: z.string(),
           required: z.boolean(),
           location: z.number(),
@@ -89,25 +71,17 @@ const agentQuery = async (messages: UIMessage[]) => {
         execute: async (input) => {
           const operation = {
             type: "add_field",
-            field: {
-              fieldType: "text",
-              ...input,
-            },
+            field: { fieldType: "text", ...input },
           };
-
-          console.log("Operation:", operation);
           return operation;
         },
       }),
+
       update_para_field: tool({
-        description: "Add a multi-line paragraph field",
+        description: "Add or update a multi-line paragraph field",
         inputSchema: z.object({
           id: z.string(),
-          new: z
-            .boolean()
-            .describe(
-              "Whether this is a new field or an update to an existing field",
-            ),
+          new: z.boolean(),
           label: z.string(),
           required: z.boolean(),
           location: z.number(),
@@ -115,25 +89,17 @@ const agentQuery = async (messages: UIMessage[]) => {
         execute: async (input) => {
           const operation = {
             type: "add_field",
-            field: {
-              fieldType: "para",
-              ...input,
-            },
+            field: { fieldType: "para", ...input },
           };
-
-          console.log("Operation:", operation);
           return operation;
         },
       }),
+
       update_radio_field: tool({
-        description: "Add a single choice radio field",
+        description: "Add or update a radio field",
         inputSchema: z.object({
           id: z.string(),
-          new: z
-            .boolean()
-            .describe(
-              "Whether this is a new field or an update to an existing field",
-            ),
+          new: z.boolean(),
           label: z.string(),
           options: z.array(z.string()).min(1),
           required: z.boolean(),
@@ -142,26 +108,17 @@ const agentQuery = async (messages: UIMessage[]) => {
         execute: async (input) => {
           const operation = {
             type: "add_field",
-            field: {
-              fieldType: "radio",
-              ...input,
-            },
+            field: { fieldType: "radio", ...input },
           };
-
-          console.log("Operation:", operation);
           return operation;
         },
       }),
 
       update_checkbox_field: tool({
-        description: "Add a multiple choice checkbox field",
+        description: "Add or update a checkbox field",
         inputSchema: z.object({
           id: z.string(),
-          new: z
-            .boolean()
-            .describe(
-              "Whether this is a new field or an update to an existing field",
-            ),
+          new: z.boolean(),
           label: z.string(),
           options: z.array(z.string()).min(1),
           required: z.boolean(),
@@ -170,34 +127,40 @@ const agentQuery = async (messages: UIMessage[]) => {
         execute: async (input) => {
           const operation = {
             type: "add_field",
-            field: {
-              fieldType: "checkbox",
-              ...input,
-            },
+            field: { fieldType: "checkbox", ...input },
           };
-
-          console.log("Operation:", operation);
           return operation;
         },
       }),
-
       done: tool({
         description: "Finish building the form",
-        inputSchema: z.object({}),
-        execute: async () => {
+        inputSchema: z.object({
+          message: z
+            .string()
+            .describe("A Human like final message to the user upon completion"),
+        }),
+        execute: async ({ message }) => {
           console.log("Agent finished.");
-          return { type: "done" };
+          return { type: "done", message };
         },
       }),
     },
   });
 
-  const result = await formAgent.generate({
-    messages: await convertToModelMessages(messages),
-  });
+  const stream = createUIMessageStream({
+    execute: async ({ writer }) => {
+      const agentStream = await formAgent.stream({
+        messages: await convertToModelMessages(messages),
+      });
 
-  console.log("Final Agent Text Output:", result.text);
-  console.log("Steps Taken:", result.steps.length);
+      for await (const event of agentStream.fullStream) {
+        if (event.type === "tool-result") {
+          const toolResult = event.output;
+          console.log("Tool result received:", toolResult);
+        }
+      }
+    },
+  });
 };
 
 const editForm = async (req: Request, res: Response) => {
@@ -224,7 +187,7 @@ const editForm = async (req: Request, res: Response) => {
     const updatedMessages = [...messages, formMessage];
 
     if (request === "create_form" && resolvedMode === "agent") {
-      await agentQuery(updatedMessages);
+      await agentQuery(updatedMessages, res);
       return;
     }
 
