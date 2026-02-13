@@ -29,13 +29,14 @@ type SideBarProps = {
   messages?: UIMessage[];
   setMessages: (messages: UIMessage[]) => void;
   sendMessage: (message: UIMessage, options?: { body?: object }) => void;
+  onSend: (message: UIMessage, mode: "ask" | "agent") => void;
   form: Form | {};
 };
 
 const SideBar = ({
   messages = [],
-  setMessages,
   sendMessage,
+  onSend,
   form,
 }: SideBarProps) => {
   const [text, setText] = useState("");
@@ -60,9 +61,13 @@ const SideBar = ({
 
     console.log("Submitting message:", userMessage);
 
-    sendMessage(userMessage, {
-      body: { request: "create_form", form, mode: aiMode },
-    });
+    if (aiMode === "ask") {
+      sendMessage(userMessage, {
+        body: { request: "create_form", form, mode: "ask" },
+      });
+    } else {
+      onSend(userMessage, "agent");
+    }
     setText("");
   };
 

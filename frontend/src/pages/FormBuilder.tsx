@@ -30,6 +30,93 @@ const FormBuilder = () => {
 
   const fetchandSetForm = async () => {};
 
+  const handleSend = async (message: UIMessage, mode: "ask" | "agent") => {
+    if (mode === "ask") {
+      sendMessage(message, {
+        body: { request: "create_form", form, mode: "ask" },
+      });
+      return;
+    }
+
+    setMessages((prev) => [...prev, message]);
+
+    try {
+      const response = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          request: "create_form",
+          form,
+          mode: "agent",
+          messages: [...messages, message],
+        }),
+      });
+
+      if (!response.body) {
+        console.log("Agent response has no body.");
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n");
+        buffer = parts.pop() ?? "";
+
+        for (const line of parts) {
+          if (line.trim()) {
+            const result = JSON.parse(line);
+
+            if (result.type === "update_title") {
+              console.log("Updating title to:", result.title);
+
+              setForm((prev) => ({ ...prev, title: result.title }));
+            }
+
+            if (result.type === "add_field") {
+              console.log("Adding field:", result.field);
+              setForm((prev) => ({
+                ...prev,
+                fields: [...((prev as Form).fields || []), result.field],
+              }));
+            }
+
+            if (result.type === "done") {
+              const finalMessage: UIMessage = {
+                id: Date.now().toString(),
+                role: "assistant",
+                parts: [
+                  {
+                    type: "text",
+                    text: result.message,
+                  },
+                ],
+              };
+
+              console.log("Agent completed with message:", result.message);
+              setMessages((prev) => [...prev, finalMessage]);
+              return;
+            }
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        console.log("Agent stream:", buffer);
+      }
+    } catch (error) {
+      console.log("Agent stream error:", error);
+    }
+  };
+
   useEffect(() => {
     if (hasInitializedRef.current || !formId) {
       return;
@@ -60,18 +147,16 @@ const FormBuilder = () => {
       ],
     };
 
-    sendMessage(intialMessage, {
-      body: { request: "create_form", form: form, aiMode: "agent" },
-    });
+    handleSend(intialMessage, "agent");
 
     if (!createFormRequest.prompt) {
       fetchandSetForm();
     }
-  }, [formId, form, sendMessage]);
+  }, [formId, form, sendMessage, messages]);
 
   useEffect(() => {
-    console.log("Messages updated:", messages);
-  }, [messages]);
+    console.log("Form state updated:", form);
+  }, [form]);
 
   return (
     <div className="flex h-screen">
@@ -79,9 +164,10 @@ const FormBuilder = () => {
         messages={messages}
         setMessages={setMessages}
         sendMessage={sendMessage}
+        onSend={handleSend}
         form={form}
       />
-      <FormPreview />
+      <FormPreview form={form} />
     </div>
   );
 };

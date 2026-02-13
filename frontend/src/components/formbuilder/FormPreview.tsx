@@ -1,12 +1,91 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MessageSquareText, MonitorSmartphone } from "lucide-react";
+import {
+  CheckboxFieldPart,
+  FormTitlePart,
+  ParaFieldPart,
+  RadioFieldPart,
+  TextFieldPart,
+} from "@/components/formbuilder/FormPart";
+import type { Form, FormField } from "@/types/Form";
 
-const FormPreview = () => {
+type FormPreviewProps = {
+  form: Form | {};
+};
+
+const FormPreview = ({ form }: FormPreviewProps) => {
+  const normalizedFields = useMemo(() => {
+    const safeForm = form as Form;
+    return (safeForm.fields || [])
+      .slice()
+      .sort((a, b) => a.location - b.location);
+  }, [form]);
+
+  const title = (form as Form).title || "Untitled Form";
+  const description = (form as Form).description;
+
   return (
     <div className=" flex-1 h-full overflow-auto">
       <TopBar />
-      <div className=" h-[200vh] "></div>
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6 sm:px-6">
+        <FormTitlePart title={title} description={description} />
+        {normalizedFields.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
+            Start by describing the form you want. Fields will appear here.
+          </div>
+        ) : (
+          normalizedFields.map((field) => {
+            const fieldType =
+              (field as FormField & { fieldType?: string }).fieldType ??
+              field.type;
+
+            if (fieldType === "text") {
+              return (
+                <TextFieldPart
+                  key={`${field.label}-${field.location}`}
+                  label={field.label}
+                  required={field.required}
+                />
+              );
+            }
+
+            if (fieldType === "para") {
+              return (
+                <ParaFieldPart
+                  key={`${field.label}-${field.location}`}
+                  label={field.label}
+                  required={field.required}
+                />
+              );
+            }
+
+            if (fieldType === "radio" || fieldType === "single_choice") {
+              return (
+                <RadioFieldPart
+                  key={`${field.label}-${field.location}`}
+                  label={field.label}
+                  required={field.required}
+                  options={field.options || []}
+                />
+              );
+            }
+
+            if (fieldType === "checkbox" || fieldType === "multiple_choice") {
+              return (
+                <CheckboxFieldPart
+                  key={`${field.label}-${field.location}`}
+                  label={field.label}
+                  required={field.required}
+                  options={field.options || []}
+                />
+              );
+            }
+
+            return null;
+          })
+        )}
+      </div>
     </div>
   );
 };

@@ -31,6 +31,9 @@ const askQuery = async (messages: UIMessage[], res: Response) => {
 };
 
 const agentQuery = async (messages: UIMessage[], res: Response) => {
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Transfer-Encoding", "chunked");
+
   const formAgent = new ToolLoopAgent({
     model: ollama("ministral-3:3b"),
     stopWhen: stepCountIs(20),
@@ -156,7 +159,8 @@ const agentQuery = async (messages: UIMessage[], res: Response) => {
       for await (const event of agentStream.fullStream) {
         if (event.type === "tool-result") {
           const toolResult = event.output;
-          console.log("Tool result received:", toolResult);
+          console.log("Tool result:", toolResult);
+          res.write(JSON.stringify(toolResult) + "\n");
         }
       }
     },
