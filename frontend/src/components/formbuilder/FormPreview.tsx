@@ -28,8 +28,8 @@ const FormPreview = ({ form, isLoading = false }: FormPreviewProps) => {
   const description = (form as Form).description;
 
   return (
-    <div className=" flex-1 h-full overflow-auto">
-      <TopBar />
+    <div className=" flex-1 h-full overflow-auto pb-24">
+      <TopBar title={title} />
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6 sm:px-6">
         <FormTitlePart title={title} description={description} />
         {normalizedFields.length === 0 ? (
@@ -118,7 +118,7 @@ const SkeletonField = () => {
 
 export default FormPreview;
 
-const TopBar = () => {
+const TopBar = ({ title }: { title: string }) => {
   const [activeView, setActiveView] = useState<"chat" | "preview">("preview");
 
   return (
@@ -126,7 +126,7 @@ const TopBar = () => {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:gap-4 sm:px-5 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-0.5">
           <div className="text-base font-semibold text-foreground sm:text-lg">
-            Customer Feedback Form
+            {title}
           </div>
           <div className="text-[11px] text-muted-foreground sm:text-xs">
             Last updated 13 Feb 2026, 2:45 PM

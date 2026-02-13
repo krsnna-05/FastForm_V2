@@ -160,7 +160,7 @@ const agentQuery = async (messages: UIMessage[], res: Response) => {
 
       for await (const event of agentStream.fullStream) {
         if (event.type === "tool-result") {
-          const toolResult = event.output;
+          const toolResult: any = event.output;
           console.log("Tool result:", toolResult);
           res.write(JSON.stringify(toolResult) + "\n");
 
