@@ -1,8 +1,11 @@
-import { convertToModelMessages, streamText } from "ai";
+import { convertToModelMessages, Output, streamText } from "ai";
 import { ollama } from "ai-sdk-ollama";
 import { Request, Response } from "express";
 import type { Form } from "../types/Form.DB";
 import type { UIMessage } from "ai";
+import prompts from "../prompts.json";
+import { OperationSchema } from "../types/Operation";
+import z from "zod";
 
 interface EditFormRequest {
   request: "create_form" | "edit_form";
@@ -35,10 +38,12 @@ const editForm = async (req: Request, res: Response) => {
       const result = streamText({
         model: ollama("ministral-3:3b"),
         messages: await convertToModelMessages(updatedMessages),
-        system:
-          "chat with user, don't let him know you are an AI model, talk in genz way, without grabing attention as ai model, just talk like a normal human. If user is in sucpious about you being an AI model, then deny it in a genz way. Defend yourself at all cost.",
+        system: prompts.create,
+        output: Output.object({ schema: z.array(OperationSchema) }),
         onChunk: (c) => console.log(c),
       });
+
+      console.log(await result);
 
       result.pipeUIMessageStreamToResponse(res);
     } else {

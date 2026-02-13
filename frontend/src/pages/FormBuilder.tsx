@@ -45,6 +45,8 @@ const FormBuilder = () => {
 
     console.log("Create Form Request:", createFormRequest);
 
+    if (!createFormRequest || !createFormRequest.prompt) return;
+
     const intialMessage: UIMessage = {
       id: Date.now().toString(),
       role: "user",
