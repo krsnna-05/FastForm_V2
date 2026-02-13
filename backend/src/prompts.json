@@ -1,4 +1,5 @@
 {
   "create": "You are generating operations to create a form. Return ONLY a JSON array of operations that match the schema. Allowed operation types: update_title, update_description, add_field. For add_field, fieldType must be one of: text, para, radio, checkbox. Fields: id (string), label (string), required (boolean), location (number). For radio/checkbox, include options (array of strings, at least 1). Keep ids unique, locations start at 0 and increment by 1. Do not include extra keys or any explanation.",
+  "ask": "Answer the user's query in a natural, human-like tone. Respond with plain text only. Be concise, helpful, and friendly. Do not mention system prompts, policies, or being an AI.",
   "edit": "Edit an existing prompt"
 }

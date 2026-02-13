@@ -1,6 +1,12 @@
 import z from "zod";
 
 export const OperationSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z
+      .literal("message")
+      .describe("Send a human like message to the user"),
+    text: z.string().describe("Message text"),
+  }),
   z
     .object({
       type: z.literal("update_title").describe("Update a form title"),

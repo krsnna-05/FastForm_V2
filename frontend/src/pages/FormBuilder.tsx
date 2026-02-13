@@ -61,7 +61,7 @@ const FormBuilder = () => {
     };
 
     sendMessage(intialMessage, {
-      body: { request: "create_form", form: form },
+      body: { request: "create_form", form: form, aiMode: "agent" },
     });
 
     if (!createFormRequest.prompt) {
