@@ -25,8 +25,6 @@ const CreateForm = () => {
   const navigate = useNavigate();
 
   const handleSubmit = (message: PromptInputMessage) => {
-    console.log("Form submitted with value:", message.text);
-    // Here you would typically handle the form submission, e.g., send the data to your backend or update state
     const newFormId = v4();
 
     localStorage.setItem(

@@ -12,6 +12,14 @@ import type { Form } from "../types/Form.DB";
 import type { UIMessage } from "ai";
 import prompts from "../prompts.json";
 import z from "zod";
+import {
+  addFieldTool,
+  deleteFieldTool,
+  moveFieldTool,
+  updateDescriptionTool,
+  updateFieldTool,
+  updateTitleTool,
+} from "../ai.tools";
 
 interface EditFormRequest {
   request: "create_form" | "edit_form";
@@ -34,164 +42,73 @@ const agentQuery = async (messages: UIMessage[], res: Response) => {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Transfer-Encoding", "chunked");
 
-  const formAgent = new ToolLoopAgent({
-    model: ollama("ministral-3:3b"),
-    stopWhen: stepCountIs(20),
-    instructions: prompts.agent,
-    temperature: 0,
-    tools: {
-      update_title: tool({
-        description: "Update the form title",
-        inputSchema: z.object({
-          title: z.string(),
-        }),
-        execute: async ({ title }) => {
-          const operation = { type: "update_title", title };
-          return operation;
-        },
-      }),
+  try {
+    const formAgent = new ToolLoopAgent({
+      model: ollama("ministral-3:3b"),
+      stopWhen: stepCountIs(30),
+      instructions: prompts.agent,
+      temperature: 0,
+      tools: {
+        update_title: updateTitleTool,
+        update_description: updateDescriptionTool,
+        add_field: addFieldTool,
+        update_field: updateFieldTool,
+        delete_field: deleteFieldTool,
+        move_field: moveFieldTool,
+      },
+    });
 
-      update_description: tool({
-        description: "Update the form description",
-        inputSchema: z.object({
-          description: z.string(),
-        }),
-        execute: async ({ description }) => {
-          const operation = { type: "update_description", description };
-          return operation;
-        },
-      }),
+    console.log("Starting agent stream with messages:", messages);
 
-      update_text_field: tool({
-        description: "Add or update a single-line text field",
-        inputSchema: z.object({
-          id: z.string(),
-          new: z.boolean(),
-          label: z.string(),
-          required: z.boolean(),
-          location: z.number(),
-        }),
-        execute: async (input) => {
-          const operation = {
-            type: "add_field",
-            field: { fieldType: "text", ...input },
-          };
-          return operation;
-        },
-      }),
+    const agentStream = await formAgent.stream({
+      messages: await convertToModelMessages(messages),
+    });
 
-      update_para_field: tool({
-        description: "Add or update a multi-line paragraph field",
-        inputSchema: z.object({
-          id: z.string(),
-          new: z.boolean(),
-          label: z.string(),
-          required: z.boolean(),
-          location: z.number(),
-        }),
-        execute: async (input) => {
-          const operation = {
-            type: "add_field",
-            field: { fieldType: "para", ...input },
-          };
-          return operation;
-        },
-      }),
+    let finalText = "";
 
-      update_radio_field: tool({
-        description: "Add or update a radio field",
-        inputSchema: z.object({
-          id: z.string(),
-          new: z.boolean(),
-          label: z.string(),
-          options: z.array(z.string()).min(1),
-          required: z.boolean(),
-          location: z.number(),
-        }),
-        execute: async (input) => {
-          const operation = {
-            type: "add_field",
-            field: { fieldType: "radio", ...input },
-          };
-          return operation;
-        },
-      }),
-
-      update_checkbox_field: tool({
-        description: "Add or update a checkbox field",
-        inputSchema: z.object({
-          id: z.string(),
-          new: z.boolean(),
-          label: z.string(),
-          options: z.array(z.string()).min(1),
-          required: z.boolean(),
-          location: z.number(),
-        }),
-        execute: async (input) => {
-          const operation = {
-            type: "add_field",
-            field: { fieldType: "checkbox", ...input },
-          };
-          return operation;
-        },
-      }),
-      done: tool({
-        description: "Finish building the form",
-        inputSchema: z.object({
-          message: z
-            .string()
-            .describe("A Human like final message to the user upon completion"),
-        }),
-        execute: async ({ message }) => {
-          console.log("Agent finished.");
-          return { type: "done", message };
-        },
-      }),
-    },
-  });
-
-  const stream = createUIMessageStream({
-    execute: async ({ writer }) => {
-      const agentStream = await formAgent.stream({
-        messages: await convertToModelMessages(messages),
-      });
-
-      let doneCalled = false;
-
-      for await (const event of agentStream.fullStream) {
-        if (event.type === "tool-result") {
-          const toolResult: any = event.output;
-          console.log("Tool result:", toolResult);
-          res.write(JSON.stringify(toolResult) + "\n");
-
-          if (toolResult.type === "done") {
-            doneCalled = true;
-          }
-        }
+    for await (const event of agentStream.fullStream) {
+      if (event.type === "tool-result") {
+        const toolResult = event.output;
+        res.write(JSON.stringify(toolResult) + "\n");
       }
 
-      // If agent finished without calling done, send a default completion message
-      if (!doneCalled) {
-        const doneResult = {
-          type: "done",
-          message: "Form created successfully!",
-        };
-        console.log(
-          "Agent finished without calling done. Sending default:",
-          doneResult,
+      if (event.type === "text-delta") {
+        finalText += event.text;
+
+        res.write(
+          JSON.stringify({
+            type: "assistant_text",
+            delta: event.text,
+          }) + "\n",
         );
-        res.write(JSON.stringify(doneResult) + "\n");
       }
+    }
 
-      res.end();
-    },
-  });
+    res.write(
+      JSON.stringify({
+        type: "done",
+        message: finalText.trim() || "Form updated successfully.",
+      }) + "\n",
+    );
+
+    res.end();
+  } catch (error) {
+    console.error("Agent streaming error:", error);
+
+    res.write(
+      JSON.stringify({
+        type: "done",
+        message: "Form updated with some issues. Please review changes.",
+      }) + "\n",
+    );
+
+    res.end();
+  }
 };
 
 const editForm = async (req: Request, res: Response) => {
   try {
-    const { request, form, messages, aiMode, mode } =
-      req.body as EditFormRequest;
+    const { form, messages, aiMode, mode } = req.body as EditFormRequest;
     const resolvedMode = aiMode ?? mode ?? "agent";
 
     const formMessage: UIMessage = {
@@ -211,7 +128,7 @@ const editForm = async (req: Request, res: Response) => {
 
     const updatedMessages = [...messages, formMessage];
 
-    if (request === "create_form" && resolvedMode === "agent") {
+    if (resolvedMode === "agent") {
       await agentQuery(updatedMessages, res);
       return;
     }

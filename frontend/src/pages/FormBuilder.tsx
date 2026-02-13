@@ -6,11 +6,17 @@ import { useSearchParams } from "react-router";
 import { DefaultChatTransport, type UIMessage } from "ai";
 
 import type { Form } from "@/types/Form";
+import { v4 as uuidv4 } from "uuid";
+import { applyOperation } from "@/components/formbuilder/form.utils";
 
 const API_ENDPOINT = "http://localhost:3000/api/form/edit";
 
 const FormBuilder = () => {
-  const [form, setForm] = useState<Form | {}>({});
+  const [form, setForm] = useState<Form | {}>({
+    title: "",
+    description: "",
+    fields: [],
+  });
   const [isLoading, setIsLoading] = useState(false);
   const hasInitializedRef = useRef(false);
 
@@ -29,118 +35,178 @@ const FormBuilder = () => {
   const [searchParams] = useSearchParams();
   const formId = searchParams.get("formId");
 
-  const fetchandSetForm = async () => {};
-
-  const handleSend = async (message: UIMessage, mode: "ask" | "agent") => {
-    if (mode === "ask") {
-      sendMessage(message, {
-        body: { request: "create_form", form, mode: "ask" },
-      });
-      return;
-    }
-
+  const handleSend = async (prompt: string, mode: "ask" | "agent") => {
     setIsLoading(true);
-    setMessages((prev) => [...prev, message]);
+    const newMessages: UIMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      parts: [
+        {
+          type: "text",
+          text: prompt,
+        },
+      ],
+    };
 
-    try {
-      const response = await fetch(API_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          request: "create_form",
-          form,
-          mode: "agent",
-          messages: [...messages, message],
-        }),
-      });
+    setMessages((prev) => [...prev, newMessages]);
 
-      if (!response.body) {
-        console.log("Agent response has no body.");
+    const res = await fetch(API_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        form,
+        messages: [...messages, newMessages],
+        aiMode: mode,
+      }),
+    });
+
+    if (res.ok && mode === "ask") {
+      const reader = res.body?.getReader();
+
+      if (!reader) {
+        console.error("No reader available on response body");
         return;
       }
 
-      const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      let done = false;
       let buffer = "";
-      let completionReceived = false;
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) {
-          break;
+      const newMessageId = uuidv4() as string;
+
+      let messageBuffer: string = "";
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+
+        if (value) {
+          buffer += decoder.decode(value, { stream: true });
         }
 
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split("\n");
-        buffer = parts.pop() ?? "";
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
 
-        for (const line of parts) {
-          if (line.trim()) {
-            const result = JSON.parse(line);
+        for (const line of lines) {
+          const trimmed = line.trim();
 
-            if (result.type === "update_title") {
-              console.log("Updating title to:", result.title);
+          if (!trimmed) {
+            continue;
+          }
 
-              setForm((prev) => ({ ...prev, title: result.title }));
-            }
+          const payload = trimmed.startsWith("data:")
+            ? trimmed.slice("data:".length).trim()
+            : trimmed;
 
-            if (result.type === "update_description") {
-              console.log("Updating description to:", result.description);
+          if (!payload) {
+            continue;
+          }
 
-              setForm((prev) => ({ ...prev, description: result.description }));
-            }
+          let parsed: any;
+          try {
+            parsed = JSON.parse(payload);
+          } catch (error) {
+            console.warn("Skipping non-JSON payload:", payload, error);
+            continue;
+          }
 
-            if (result.type === "add_field") {
-              console.log("Adding field:", result.field);
-              setForm((prev) => ({
-                ...prev,
-                fields: [...((prev as Form).fields || []), result.field],
-              }));
-            }
+          if (parsed.type === "text-delta") {
+            messageBuffer += parsed.delta;
+            const updatedText = messageBuffer;
 
-            if (result.type === "done") {
-              const finalMessage: UIMessage = {
-                id: Date.now().toString(),
-                role: "assistant",
-                parts: [
-                  {
-                    type: "text",
-                    text: result.message,
-                  },
-                ],
-              };
+            const nextMessage: UIMessage = {
+              id: newMessageId,
+              role: "assistant",
+              parts: [
+                {
+                  type: "text",
+                  text: updatedText,
+                },
+              ],
+            };
 
-              console.log("Agent completed with message:", result.message);
-              setMessages((prev) => [...prev, finalMessage]);
-              completionReceived = true;
-            }
+            setMessages((prev) => [
+              ...prev.filter((msg) => msg.id !== newMessageId),
+              nextMessage,
+            ]);
           }
         }
       }
-
-      if (buffer.trim()) {
-        console.log("Agent stream:", buffer);
-      }
-
-      // If stream ended without completion message, add a default one
-      if (!completionReceived) {
-        console.log("Stream ended without completion message");
-        const defaultMessage: UIMessage = {
-          id: Date.now().toString(),
-          role: "assistant",
-          parts: [
-            {
-              type: "text",
-              text: "Form created successfully!",
-            },
-          ],
-        };
-        setMessages((prev) => [...prev, defaultMessage]);
-      }
-
       setIsLoading(false);
-    } catch (error) {
-      console.log("Agent stream error:", error);
+    } else if (res.ok && mode === "agent") {
+      const reader = res.body?.getReader();
+
+      if (!reader) {
+        console.error("No reader available on response body");
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let done = false;
+      let buffer = "";
+
+      const newMessageId = uuidv4() as string;
+      let messageBuffer: string = "";
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+
+        done = doneReading;
+
+        if (value) {
+          buffer += decoder.decode(value, { stream: true });
+        }
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) {
+            continue;
+          }
+
+          let parsed: any;
+          try {
+            parsed = JSON.parse(trimmed);
+          } catch (error) {
+            console.warn("Skipping non-JSON payload:", trimmed, error);
+            continue;
+          }
+          if (parsed.type === "assistant_text") {
+            messageBuffer += parsed.delta || "";
+
+            const nextMessage: UIMessage = {
+              id: newMessageId,
+              role: "assistant",
+              parts: [
+                {
+                  type: "text",
+                  text: messageBuffer,
+                },
+              ],
+            };
+
+            setMessages((prev) => [
+              ...prev.filter((msg) => msg.id !== newMessageId),
+              nextMessage,
+            ]);
+            continue;
+          }
+
+          if (parsed.type === "done") {
+            setIsLoading(false);
+            continue;
+          }
+
+          setForm((prevForm) => applyOperation(prevForm, parsed));
+        }
+      }
+      setIsLoading(false);
+    } else {
+      console.error("Error response from server:", res.statusText);
       setIsLoading(false);
     }
   };
@@ -158,33 +224,16 @@ const FormBuilder = () => {
 
     localStorage.removeItem(`fastform_create_form_${formId}`);
 
-    console.log("Create Form Request:", createFormRequest);
-
     if (!createFormRequest || !createFormRequest.prompt) return;
 
-    const intialMessage: UIMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      parts: [
-        {
-          type: "text",
-          text:
-            createFormRequest.prompt ||
-            "Create a form with a single text input field and a submit button.",
-        },
-      ],
-    };
-
-    handleSend(intialMessage, "agent");
+    handleSend(createFormRequest.prompt, "agent");
 
     if (!createFormRequest.prompt) {
       fetchandSetForm();
     }
   }, [formId, form, sendMessage, messages]);
 
-  useEffect(() => {
-    console.log("Form state updated:", form);
-  }, [form]);
+  useEffect(() => {}, [form]);
 
   return (
     <div className="flex h-screen">
