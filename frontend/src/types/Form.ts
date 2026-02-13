@@ -10,9 +10,6 @@ type Form = {
   title: string;
   description?: string;
   fields: FormField[];
-  userId: string;
-  createdAt: Date;
-  updatedAt: Date;
 };
 
-export { Form, FormField };
+export type { Form, FormField };

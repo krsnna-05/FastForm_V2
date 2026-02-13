@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState } from "react";
 import {
   Conversation,
@@ -21,45 +19,50 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
+  type PromptInputMessage,
 } from "../ai-elements/prompt-input";
 import { Sparkles, Wand2 } from "lucide-react";
 import type { UIMessage } from "ai";
+import type { Form } from "@/types/Form";
 
 type SideBarProps = {
   messages?: UIMessage[];
   setMessages: (messages: UIMessage[]) => void;
+  sendMessage: (message: UIMessage, options?: { body?: object }) => void;
+  form: Form | {};
 };
 
-const SideBar = ({ messages = [], setMessages }: SideBarProps) => {
+const SideBar = ({
+  messages = [],
+  setMessages,
+  sendMessage,
+  form,
+}: SideBarProps) => {
   const [text, setText] = useState("");
 
-  const handleSubmit = (message: any) => {
-    if (message.text.trim()) {
-      const userMessage: UIMessage = {
-        id: Date.now().toString(),
-        role: "user",
-        parts: [{ type: "text", text: message.text }],
-      };
-
-      setMessages([...messages, userMessage]);
-
-      // Simulate assistant response
-      setTimeout(() => {
-        const assistantMessage: UIMessage = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          parts: [
-            {
-              type: "text",
-              text: "I've processed your request. Is there anything else you'd like to modify?",
-            },
-          ],
-        };
-        setMessages([...messages, userMessage, assistantMessage]);
-      }, 500);
-
-      setText("");
+  const handleSubmit = (message: PromptInputMessage) => {
+    const trimmedText = message.text?.trim();
+    if (!trimmedText) {
+      return;
     }
+
+    const userMessage: UIMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      parts: [
+        {
+          type: "text",
+          text: trimmedText,
+        },
+      ],
+    };
+
+    console.log("Submitting message:", userMessage);
+
+    sendMessage(userMessage, {
+      body: { request: "create_form", form },
+    });
+    setText("");
   };
 
   return (
@@ -116,7 +119,7 @@ const SideBar = ({ messages = [], setMessages }: SideBarProps) => {
             />
           </PromptInputBody>
           <PromptInputFooter className="border-t border-border bg-muted/30 px-4 py-3">
-            <PromptInputTools></PromptInputTools>
+            <PromptInputTools />
             <PromptInputSubmit
               disabled={!text}
               className="gap-2 shadow-md hover:shadow-lg transition-all"
@@ -150,7 +153,7 @@ const AIStatus = ({
     return (
       <div className="flex items-center gap-2 text-yellow-500 text-xs">
         <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-        {desciption || "AI is processing your request..."}
+        {description || "AI is processing your request..."}
       </div>
     );
   }

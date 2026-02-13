@@ -6,6 +6,7 @@ import { envConfig, googleAuthConfig, googleAuthScopes } from "./config/env";
 import { Request, Response } from "express";
 import { connectDB } from "./DB";
 import authRouter from "./routes/auth.route";
+import formRouter from "./routes/form.route";
 
 const app = express();
 const PORT = envConfig.PORT || 3000;
@@ -18,6 +19,7 @@ connectDB().catch((error) => {
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRouter);
+app.use("/api/form", formRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.send({

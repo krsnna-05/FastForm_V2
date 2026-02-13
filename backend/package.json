@@ -32,6 +32,8 @@
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.96",
+    "ai": "^6.0.85",
+    "ai-sdk-ollama": "^3.7.0",
     "cors": "^2.8.6",
     "googleapis": "^171.4.0",
     "jsonwebtoken": "^9.0.3",
