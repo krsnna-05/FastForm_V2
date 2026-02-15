@@ -8,17 +8,23 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import type { Form } from "@/types/Form";
 import { v4 as uuidv4 } from "uuid";
 import { applyOperation } from "@/components/formbuilder/form.utils";
+import useAuthStore from "@/store/auth.store";
 
 const API_ENDPOINT_EDIT = "http://localhost:3000/api/form/edit?request=create";
 const API_ENDPOINT_CREATE =
   "http://localhost:3000/api/form/edit?request=create";
 
 const FormBuilder = () => {
-  const [form, setForm] = useState<Form | {}>({
+  const { User } = useAuthStore();
+
+  const [form, setForm] = useState<Form>({
+    _id: "",
+    userId: "",
     title: "",
     description: "",
     fields: [],
   });
+
   const [isLoading, setIsLoading] = useState(false);
   const hasInitializedRef = useRef(false);
 
@@ -29,6 +35,10 @@ const FormBuilder = () => {
       }),
     [],
   );
+
+  useEffect(() => {
+    setForm((prev) => ({ ...prev, userId: User?.userId || "" }));
+  }, [form.userId]);
 
   const { messages, setMessages, sendMessage } = useChat({
     transport,
@@ -41,6 +51,7 @@ const FormBuilder = () => {
     prompt: string,
     mode: "ask" | "agent",
     req: "create" | "edit",
+    formId?: string,
   ) => {
     setIsLoading(true);
     const newMessages: UIMessage = {
@@ -58,7 +69,7 @@ const FormBuilder = () => {
 
     console.log(api_endpoint, req);
 
-    if (req == "create" && api_endpoint == "") {
+    if (req == "create" && api_endpoint == "" && formId) {
       api_endpoint = API_ENDPOINT_CREATE;
     } else if (req == "edit" && api_endpoint == "") {
       api_endpoint = API_ENDPOINT_EDIT;
@@ -77,6 +88,9 @@ const FormBuilder = () => {
         form,
         messages: [...messages, newMessages],
         aiMode: mode,
+        formId: formId,
+        userId: User?.userId || "",
+        request: req,
       }),
     });
 
@@ -244,7 +258,7 @@ const FormBuilder = () => {
 
     if (!createFormRequest || !createFormRequest.prompt) return;
 
-    handleSend(createFormRequest.prompt, "agent", "create");
+    handleSend(createFormRequest.prompt, "agent", "create", formId);
   }, [formId, form, sendMessage, messages]);
 
   useEffect(() => {}, [form]);

@@ -7,7 +7,7 @@ type FormField = {
 };
 
 type Form = {
-  id: string;
+  _id: string;
   title: string;
   description?: string;
   fields: FormField[];

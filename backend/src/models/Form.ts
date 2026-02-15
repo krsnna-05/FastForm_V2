@@ -13,9 +13,10 @@ const FormFieldSchema = new mongoose.Schema<FormField>({
 });
 
 const FormSchema = new mongoose.Schema<Form>({
+  _id: { type: String, required: true },
   title: { type: String, required: true },
   description: { type: String },
-  fields: FormFieldSchema,
+  fields: { type: [FormFieldSchema], default: [] },
   userId: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

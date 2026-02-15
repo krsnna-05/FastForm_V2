@@ -7,9 +7,11 @@ type FormField = {
 };
 
 type Form = {
+  _id: string;
+  userId: string;
   title: string;
   description?: string;
-  fields: FormField[];
+  fields: FormField[] | [];
 };
 
 export type { Form, FormField };

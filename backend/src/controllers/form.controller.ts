@@ -3,15 +3,12 @@ import {
   streamText,
   ToolLoopAgent,
   stepCountIs,
-  tool,
-  createUIMessageStream,
 } from "ai";
 import { ollama } from "ai-sdk-ollama";
 import { Request, Response } from "express";
 import type { Form } from "../types/Form.DB";
 import type { UIMessage } from "ai";
 import prompts from "../prompts.json";
-import z from "zod";
 import {
   addFieldTool,
   deleteFieldTool,
@@ -20,13 +17,16 @@ import {
   updateFieldTool,
   updateTitleTool,
 } from "../ai.tools";
+import FormModel from "../models/Form";
 
 interface EditFormRequest {
-  request: "create_form" | "edit_form";
+  request: "create" | "edit";
   form: Form;
   messages: UIMessage[];
   aiMode?: "ask" | "agent";
   mode?: "ask" | "agent";
+  formId?: string;
+  userId: string;
 }
 
 const askQuery = async (messages: UIMessage[], res: Response) => {
@@ -38,7 +38,12 @@ const askQuery = async (messages: UIMessage[], res: Response) => {
   result.pipeUIMessageStreamToResponse(res);
 };
 
-const agentQuery = async (messages: UIMessage[], res: Response) => {
+const agentQuery = async (
+  messages: UIMessage[],
+  res: Response,
+  formId: string,
+  form: Form,
+) => {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Transfer-Encoding", "chunked");
 
@@ -64,9 +69,32 @@ const agentQuery = async (messages: UIMessage[], res: Response) => {
 
     let finalText = "";
 
+    let updatedForm: Form = {
+      _id: formId,
+      title: "",
+      description: "",
+      fields: [],
+      userId: form.userId,
+      createdAt: form.createdAt,
+      updatedAt: form.updatedAt,
+    };
+
     for await (const event of agentStream.fullStream) {
       if (event.type === "tool-result") {
-        const toolResult = event.output;
+        const toolResult: any = event.output;
+
+        if (toolResult.type === "update_title") {
+          updatedForm.title = toolResult.title;
+        }
+
+        if (toolResult.type === "update_description") {
+          updatedForm.description = toolResult.description;
+        }
+
+        if (toolResult.type === "add_field") {
+          updatedForm.fields.push(toolResult.field);
+        }
+
         res.write(JSON.stringify(toolResult) + "\n");
       }
 
@@ -106,8 +134,27 @@ const agentQuery = async (messages: UIMessage[], res: Response) => {
 
 const editForm = async (req: Request, res: Response) => {
   try {
-    const { form, messages, aiMode } = req.body as EditFormRequest;
+    const { form, messages, aiMode, formId, request, userId } =
+      req.body as EditFormRequest;
     const resolvedMode = aiMode ?? "agent";
+
+    console.log("Received form edit request:", {
+      form,
+      formId: formId,
+      title: form.title,
+      aiMode: resolvedMode,
+    });
+
+    if (request === "create") {
+      const newForm = new FormModel({
+        _id: formId,
+        userId: userId,
+        title: "Untitled Form",
+        description: "",
+        fields: [],
+      });
+      await newForm.save();
+    }
 
     const formMessage: UIMessage = {
       id: Date.now().toString(),
@@ -127,7 +174,7 @@ const editForm = async (req: Request, res: Response) => {
     const updatedMessages = [...messages, formMessage];
 
     if (resolvedMode === "agent") {
-      await agentQuery(updatedMessages, res);
+      await agentQuery(updatedMessages, res, formId!, form);
       return;
     }
 
