@@ -40,9 +40,7 @@ type SideBarProps = {
 
 const SideBar = ({
   messages = [],
-  sendMessage,
   onSend,
-  form,
   isLoading = false,
 }: SideBarProps) => {
   const [text, setText] = useState("");

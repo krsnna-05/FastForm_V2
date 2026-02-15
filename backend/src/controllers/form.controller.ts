@@ -42,6 +42,7 @@ const agentQuery = async (
   messages: UIMessage[],
   res: Response,
   formId: string,
+  userId: string,
   form: Form,
 ) => {
   res.setHeader("Content-Type", "application/json");
@@ -71,10 +72,10 @@ const agentQuery = async (
 
     let updatedForm: Form = {
       _id: formId,
+      userId: userId,
       title: "",
       description: "",
       fields: [],
-      userId: form.userId,
       createdAt: form.createdAt,
       updatedAt: form.updatedAt,
     };
@@ -109,6 +110,13 @@ const agentQuery = async (
         );
       }
     }
+
+    console.log("Final updated form from agent:", updatedForm);
+
+    await FormModel.findByIdAndUpdate(formId, updatedForm, {
+      new: true,
+      upsert: true,
+    });
 
     res.write(
       JSON.stringify({
@@ -174,7 +182,7 @@ const editForm = async (req: Request, res: Response) => {
     const updatedMessages = [...messages, formMessage];
 
     if (resolvedMode === "agent") {
-      await agentQuery(updatedMessages, res, formId!, form);
+      await agentQuery(updatedMessages, res, formId!, userId, form);
       return;
     }
 
