@@ -29,7 +29,11 @@ type SideBarProps = {
   messages?: UIMessage[];
   setMessages: (messages: UIMessage[]) => void;
   sendMessage: (message: UIMessage, options?: { body?: object }) => void;
-  onSend: (message: string, mode: "ask" | "agent") => void;
+  onSend: (
+    message: string,
+    mode: "ask" | "agent",
+    req: "create" | "edit",
+  ) => void;
   form: Form | {};
   isLoading?: boolean;
 };
@@ -50,18 +54,7 @@ const SideBar = ({
       return;
     }
 
-    const userMessage: UIMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      parts: [
-        {
-          type: "text",
-          text: trimmedText,
-        },
-      ],
-    };
-
-    onSend(trimmedText, aiMode);
+    onSend(trimmedText, aiMode, "edit");
     setText("");
   };
 

@@ -58,8 +58,6 @@ const agentQuery = async (messages: UIMessage[], res: Response) => {
       },
     });
 
-    console.log("Starting agent stream with messages:", messages);
-
     const agentStream = await formAgent.stream({
       messages: await convertToModelMessages(messages),
     });
@@ -108,8 +106,8 @@ const agentQuery = async (messages: UIMessage[], res: Response) => {
 
 const editForm = async (req: Request, res: Response) => {
   try {
-    const { form, messages, aiMode, mode } = req.body as EditFormRequest;
-    const resolvedMode = aiMode ?? mode ?? "agent";
+    const { form, messages, aiMode } = req.body as EditFormRequest;
+    const resolvedMode = aiMode ?? "agent";
 
     const formMessage: UIMessage = {
       id: Date.now().toString(),
@@ -134,7 +132,7 @@ const editForm = async (req: Request, res: Response) => {
     }
 
     if (resolvedMode === "ask") {
-      await askQuery(messages, res);
+      await askQuery(updatedMessages, res);
       return;
     }
 

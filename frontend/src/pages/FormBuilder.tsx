@@ -1,6 +1,6 @@
 import FormPreview from "@/components/formbuilder/FormPreview";
 import SideBar from "@/components/formbuilder/SideBar";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useSearchParams } from "react-router";
 import { DefaultChatTransport, type UIMessage } from "ai";
@@ -9,7 +9,9 @@ import type { Form } from "@/types/Form";
 import { v4 as uuidv4 } from "uuid";
 import { applyOperation } from "@/components/formbuilder/form.utils";
 
-const API_ENDPOINT = "http://localhost:3000/api/form/edit";
+const API_ENDPOINT_EDIT = "http://localhost:3000/api/form/edit?request=create";
+const API_ENDPOINT_CREATE =
+  "http://localhost:3000/api/form/edit?request=create";
 
 const FormBuilder = () => {
   const [form, setForm] = useState<Form | {}>({
@@ -23,7 +25,7 @@ const FormBuilder = () => {
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: API_ENDPOINT,
+        api: API_ENDPOINT_EDIT,
       }),
     [],
   );
@@ -35,7 +37,11 @@ const FormBuilder = () => {
   const [searchParams] = useSearchParams();
   const formId = searchParams.get("formId");
 
-  const handleSend = async (prompt: string, mode: "ask" | "agent") => {
+  const handleSend = async (
+    prompt: string,
+    mode: "ask" | "agent",
+    req: "create" | "edit",
+  ) => {
     setIsLoading(true);
     const newMessages: UIMessage = {
       id: Date.now().toString(),
@@ -48,9 +54,21 @@ const FormBuilder = () => {
       ],
     };
 
+    let api_endpoint = "";
+
+    console.log(api_endpoint, req);
+
+    if (req == "create" && api_endpoint == "") {
+      api_endpoint = API_ENDPOINT_CREATE;
+    } else if (req == "edit" && api_endpoint == "") {
+      api_endpoint = API_ENDPOINT_EDIT;
+    } else {
+      throw new Error("API ENDPOINT NOT SET, FILE FORMBUILDER.TSX");
+    }
+
     setMessages((prev) => [...prev, newMessages]);
 
-    const res = await fetch(API_ENDPOINT, {
+    const res = await fetch(api_endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -226,11 +244,7 @@ const FormBuilder = () => {
 
     if (!createFormRequest || !createFormRequest.prompt) return;
 
-    handleSend(createFormRequest.prompt, "agent");
-
-    if (!createFormRequest.prompt) {
-      fetchandSetForm();
-    }
+    handleSend(createFormRequest.prompt, "agent", "create");
   }, [formId, form, sendMessage, messages]);
 
   useEffect(() => {}, [form]);
