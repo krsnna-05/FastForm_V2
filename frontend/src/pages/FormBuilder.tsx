@@ -11,6 +11,7 @@ import { applyOperation } from "@/components/formbuilder/form.utils";
 import useAuthStore from "@/store/auth.store";
 
 const API_ENDPOINT = "http://localhost:3000/api/form/edit";
+const FORM_FETCH_ENDPOINT = "http://localhost:3000/api/form";
 
 const FormBuilder = () => {
   const { User } = useAuthStore();
@@ -24,6 +25,7 @@ const FormBuilder = () => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingForm, setIsFetchingForm] = useState(false);
   const hasInitializedRef = useRef(false);
 
   const transport = useMemo(
@@ -36,7 +38,7 @@ const FormBuilder = () => {
 
   useEffect(() => {
     setForm((prev) => ({ ...prev, userId: User?.userId || "" }));
-  }, [form.userId]);
+  }, [User?.userId]);
 
   const { messages, setMessages, sendMessage } = useChat({
     transport,
@@ -45,11 +47,78 @@ const FormBuilder = () => {
   const [searchParams] = useSearchParams();
   const formId = searchParams.get("formId");
 
+  useEffect(() => {
+    if (!formId || !User?.userId) {
+      return;
+    }
+
+    const createFormRequest = JSON.parse(
+      localStorage.getItem(`fastform_create_form_${formId}`) || "{}",
+    );
+
+    if (createFormRequest?.prompt) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchForm = async () => {
+      setIsFetchingForm(true);
+
+      try {
+        const url = new URL(`${FORM_FETCH_ENDPOINT}/${formId}`);
+        url.searchParams.set("userId", User?.userId || "");
+
+        const res = await fetch(url.toString(), {
+          method: "GET",
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          throw new Error(res.statusText || "Failed to fetch form");
+        }
+
+        const payload = await res.json();
+        if (payload?.data) {
+          const normalized = {
+            ...payload.data,
+            fields: Array.isArray(payload.data.fields)
+              ? payload.data.fields.map((field: any, index: number) => ({
+                  ...field,
+                  type: field.type || field.fieldType || "text",
+                  location:
+                    typeof field.location === "number" ? field.location : index,
+                }))
+              : [],
+          };
+
+          setForm(normalized);
+        }
+      } catch (error: any) {
+        if (error?.name === "AbortError") {
+          return;
+        }
+        console.error("Failed to fetch form:", error);
+      } finally {
+        setIsFetchingForm(false);
+      }
+    };
+
+    fetchForm();
+
+    return () => controller.abort();
+  }, [formId, User?.userId]);
+
   const handleSend = async (
     prompt: string,
     mode: "ask" | "agent",
     req: "create" | "edit",
   ) => {
+    if (req === "edit" && !formId) {
+      console.error("Missing formId for edit request");
+      return;
+    }
+
     setIsLoading(true);
     const newMessages: UIMessage = {
       id: Date.now().toString(),
@@ -248,6 +317,8 @@ const FormBuilder = () => {
 
   useEffect(() => {}, [form]);
 
+  const isBusy = isLoading || isFetchingForm;
+
   return (
     <div className="flex h-screen">
       <SideBar
@@ -256,9 +327,10 @@ const FormBuilder = () => {
         sendMessage={sendMessage}
         onSend={handleSend}
         form={form}
-        isLoading={isLoading}
+        isLoading={isBusy}
+        formId={formId}
       />
-      <FormPreview form={form} isLoading={isLoading} />
+      <FormPreview form={form} isLoading={isBusy} />
     </div>
   );
 };

@@ -20,6 +20,11 @@ const FormPreview = ({ form, isLoading = false }: FormPreviewProps) => {
   const normalizedFields = useMemo(() => {
     const safeForm = form as Form;
     return (safeForm.fields || [])
+      .map((field, index) => ({
+        ...field,
+        type: field.type || "text",
+        location: typeof field.location === "number" ? field.location : index,
+      }))
       .slice()
       .sort((a, b) => a.location - b.location);
   }, [form]);
@@ -46,8 +51,9 @@ const FormPreview = ({ form, isLoading = false }: FormPreviewProps) => {
           <>
             {normalizedFields.map((field) => {
               const fieldType =
-                (field as FormField & { fieldType?: string }).fieldType ??
-                field.type;
+                ((field as FormField & { fieldType?: string }).fieldType ??
+                  field.type) ||
+                "text";
 
               if (fieldType === "text") {
                 return (

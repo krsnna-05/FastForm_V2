@@ -12,9 +12,7 @@ import prompts from "../prompts.json";
 import {
   addFieldTool,
   deleteFieldTool,
-  moveFieldTool,
   updateDescriptionTool,
-  updateFieldTool,
   updateTitleTool,
 } from "../ai.tools";
 import FormModel from "../models/Form";
@@ -44,6 +42,7 @@ const agentQuery = async (
   formId: string,
   userId: string,
   form: Form,
+  allowUpsert: boolean,
 ) => {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Transfer-Encoding", "chunked");
@@ -58,9 +57,7 @@ const agentQuery = async (
         update_title: updateTitleTool,
         update_description: updateDescriptionTool,
         add_field: addFieldTool,
-        update_field: updateFieldTool,
         delete_field: deleteFieldTool,
-        move_field: moveFieldTool,
       },
     });
 
@@ -71,18 +68,16 @@ const agentQuery = async (
     let finalText = "";
 
     let updatedForm: Form = {
+      ...form,
       _id: formId,
       userId: userId,
-      title: "",
-      description: "",
-      fields: [],
-      createdAt: form.createdAt,
-      updatedAt: form.updatedAt,
     };
 
     for await (const event of agentStream.fullStream) {
       if (event.type === "tool-result") {
         const toolResult: any = event.output;
+
+        console.log("Received tool result from agent:", toolResult);
 
         if (toolResult.type === "update_title") {
           updatedForm.title = toolResult.title;
@@ -115,7 +110,7 @@ const agentQuery = async (
 
     await FormModel.findByIdAndUpdate(formId, updatedForm, {
       new: true,
-      upsert: true,
+      upsert: allowUpsert,
     });
 
     res.write(
@@ -146,12 +141,19 @@ const editForm = async (req: Request, res: Response) => {
       req.body as EditFormRequest;
     const resolvedMode = aiMode ?? "agent";
 
+    if (!formId) {
+      res.status(400).json({ error: "Missing formId" });
+      return;
+    }
+
     console.log("Received form edit request:", {
       form,
       formId: formId,
       title: form.title,
       aiMode: resolvedMode,
     });
+
+    let currentForm = form;
 
     if (request === "create") {
       const newForm = new FormModel({
@@ -162,6 +164,14 @@ const editForm = async (req: Request, res: Response) => {
         fields: [],
       });
       await newForm.save();
+      currentForm = newForm.toObject();
+    } else if (request === "edit") {
+      const existingForm = await FormModel.findById(formId).exec();
+      if (!existingForm) {
+        res.status(404).json({ error: "Form not found" });
+        return;
+      }
+      currentForm = existingForm.toObject();
     }
 
     const formMessage: UIMessage = {
@@ -174,7 +184,7 @@ const editForm = async (req: Request, res: Response) => {
         },
         {
           type: "text",
-          text: JSON.stringify(form),
+          text: JSON.stringify(currentForm),
         },
       ],
     };
@@ -182,7 +192,14 @@ const editForm = async (req: Request, res: Response) => {
     const updatedMessages = [...messages, formMessage];
 
     if (resolvedMode === "agent") {
-      await agentQuery(updatedMessages, res, formId!, userId, form);
+      await agentQuery(
+        updatedMessages,
+        res,
+        formId,
+        userId,
+        currentForm,
+        request === "create",
+      );
       return;
     }
 

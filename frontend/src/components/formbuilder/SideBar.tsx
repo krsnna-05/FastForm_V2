@@ -36,12 +36,14 @@ type SideBarProps = {
   ) => void;
   form: Form | {};
   isLoading?: boolean;
+  formId?: string | null;
 };
 
 const SideBar = ({
   messages = [],
   onSend,
   isLoading = false,
+  formId,
 }: SideBarProps) => {
   const [text, setText] = useState("");
   const [aiMode, setAiMode] = useState<"ask" | "agent">("ask");
@@ -49,6 +51,10 @@ const SideBar = ({
   const handleSubmit = (message: PromptInputMessage) => {
     const trimmedText = message.text?.trim();
     if (!trimmedText) {
+      return;
+    }
+
+    if (!formId) {
       return;
     }
 

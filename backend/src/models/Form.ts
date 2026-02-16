@@ -3,11 +3,12 @@ import type { Form, FormField } from "../types/Form.DB";
 
 const FormFieldSchema = new mongoose.Schema<FormField>({
   label: { type: String, required: true },
-  type: {
+  fieldType: {
     type: String,
     enum: ["text", "para", "single_choice", "multiple_choice"],
     required: true,
   },
+  location: { type: Number, required: true },
   options: [{ type: String }], // Only for multiple_choice
   required: { type: Boolean, required: true },
 });
