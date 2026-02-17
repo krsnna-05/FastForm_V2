@@ -22,6 +22,7 @@ const FormBuilder = () => {
     title: "",
     description: "",
     fields: [],
+    createdAt: new Date(),
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -88,6 +89,9 @@ const FormBuilder = () => {
                   type: field.type || field.fieldType || "text",
                   location:
                     typeof field.location === "number" ? field.location : index,
+                  createdAt: field.createdAt
+                    ? new Date(field.createdAt)
+                    : new Date(),
                 }))
               : [],
           };

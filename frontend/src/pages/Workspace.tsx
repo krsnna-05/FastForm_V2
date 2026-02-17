@@ -10,7 +10,7 @@ import { useNavigate } from "react-router";
 type FormSummary = {
   _id: string;
   title: string;
-  updatedAt?: string;
+  createdAt?: string;
 };
 
 type Pagination = {
@@ -158,8 +158,8 @@ const Workspace = () => {
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           <span>
-                            {form.updatedAt
-                              ? new Date(form.updatedAt).toLocaleString()
+                            {form.createdAt
+                              ? new Date(form.createdAt).toLocaleString()
                               : "No updates yet"}
                           </span>
                         </div>

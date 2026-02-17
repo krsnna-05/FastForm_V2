@@ -31,10 +31,11 @@ const FormPreview = ({ form, isLoading = false }: FormPreviewProps) => {
 
   const title = (form as Form).title || "Untitled Form";
   const description = (form as Form).description;
+  const createdAt = (form as Form).createdAt;
 
   return (
     <div className=" flex-1 h-full overflow-auto pb-24">
-      <TopBar title={title} />
+      <TopBar title={title} createdAt={createdAt} />
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6 sm:px-6">
         <FormTitlePart title={title} description={description} />
         {normalizedFields.length === 0 ? (
@@ -124,7 +125,7 @@ const SkeletonField = () => {
 
 export default FormPreview;
 
-const TopBar = ({ title }: { title: string }) => {
+const TopBar = ({ title, createdAt }: { title: string; createdAt: Date }) => {
   const [activeView, setActiveView] = useState<"chat" | "preview">("preview");
 
   return (
@@ -135,7 +136,8 @@ const TopBar = ({ title }: { title: string }) => {
             {title}
           </div>
           <div className="text-[11px] text-muted-foreground sm:text-xs">
-            Last updated 13 Feb 2026, 2:45 PM
+            Created at{" "}
+            {createdAt ? new Date(createdAt).toLocaleString() : "Unknown"}
           </div>
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center md:w-auto md:justify-end">

@@ -12,6 +12,7 @@ type Form = {
   title: string;
   description?: string;
   fields: FormField[] | [];
+  createdAt: Date;
 };
 
 export type { Form, FormField };

@@ -20,8 +20,8 @@ const getForms = async (req: Request, res: Response) => {
 
     const [forms, total] = await Promise.all([
       FormModel.find({ userId })
-        .select({ _id: 1, title: 1, updatedAt: 1 })
-        .sort({ updatedAt: -1 })
+        .select({ _id: 1, title: 1, createdAt: 1 })
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean()
