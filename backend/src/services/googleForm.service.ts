@@ -26,8 +26,8 @@ class googleFormService {
     });
   }
 
-  createGoogleForm = async (form: Form) => {
-    this.forms.forms.create({
+  createGoogleForm = async (form: Partial<Form>) => {
+    const res = this.forms.forms.create({
       requestBody: {
         info: {
           title: form.title,
@@ -35,9 +35,19 @@ class googleFormService {
         },
       },
     });
+
+    return res;
   };
 
-  updateGoogleForm = async (googleFormId: string, form: Form) => {
+  updateGoogleForm = async (googleFormId: string, form: Partial<Form>) => {
+    if (!googleFormId || !form.fields) {
+      throw new Error(
+        "{GOOGLE_FORM_UPDATE_FAILED}: Missing googleFormId or form fields",
+      );
+    }
+
+    const fields = form.fields;
+
     const updatedRequests: forms_v1.Schema$Request[] = [];
 
     const currGoogleForm = await this.forms.forms.get({
@@ -54,7 +64,7 @@ class googleFormService {
       });
     });
 
-    const newRequests = form.fields.map((field, index) => ({
+    const newRequests = fields.map((field, index) => ({
       createItem: {
         item: {
           title: field.label,

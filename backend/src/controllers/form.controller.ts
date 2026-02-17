@@ -106,8 +106,6 @@ const agentQuery = async (
       }
     }
 
-    console.log("Final updated form from agent:", updatedForm);
-
     await FormModel.findByIdAndUpdate(formId, updatedForm, {
       new: true,
       upsert: allowUpsert,
