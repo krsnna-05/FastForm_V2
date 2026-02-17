@@ -12,6 +12,9 @@ type Form = {
   description?: string;
   fields: FormField[];
   userId: string;
+  googleFormId?: string;
+  googleFormUrl?: string;
+  isSyncedWithGoogleForm: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

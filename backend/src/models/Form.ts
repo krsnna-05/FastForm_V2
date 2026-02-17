@@ -19,6 +19,9 @@ const FormSchema = new mongoose.Schema<Form>({
   description: { type: String },
   fields: { type: [FormFieldSchema], default: [] },
   userId: { type: String, required: true },
+  googleFormId: { type: String },
+  googleFormUrl: { type: String },
+  isSyncedWithGoogleForm: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

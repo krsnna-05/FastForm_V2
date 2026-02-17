@@ -98,6 +98,23 @@ class DBService {
       throw error;
     }
   };
+
+  fetchAccessTokenByUserId = async (userId: string): Promise<string | null> => {
+    try {
+      const user = await UserModel.findById(userId)
+        .select({ accessToken: 1 })
+        .exec();
+
+      if (!user) {
+        return null;
+      }
+
+      return user.accessToken || null;
+    } catch (error) {
+      console.error("Error fetching access token by user ID:", error);
+      throw error;
+    }
+  };
 }
 
 export default new DBService();
