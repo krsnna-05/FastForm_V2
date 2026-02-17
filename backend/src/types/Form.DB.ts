@@ -1,6 +1,6 @@
 type FormField = {
   label: string;
-  fieldType: "text" | "para" | "single_choice" | "multiple_choice";
+  fieldType: "text" | "para" | "radio" | "checkbox";
   options?: string[]; // Only for multiple_choice
   required: boolean;
   location: number; // Position of the field in the form

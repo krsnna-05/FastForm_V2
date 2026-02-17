@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MessageSquareText, MonitorSmartphone } from "lucide-react";
 import {
@@ -10,13 +10,24 @@ import {
 } from "@/components/formbuilder/FormPart";
 import type { Form, FormField } from "@/types/Form";
 import { Skeleton } from "@/components/ui/skeleton";
+import { envConfig } from "@/config/env";
+import { Spinner } from "@/components/ui/spinner";
+
+const CREATE_GOOGLE_FORM_ENDPOINT = `${envConfig.BACKEND_URI}/api/form/google/create`;
 
 type FormPreviewProps = {
   form: Form | {};
+  setForm?: (form: Form) => void;
   isLoading?: boolean;
 };
 
-const FormPreview = ({ form, isLoading = false }: FormPreviewProps) => {
+const FormPreview = ({
+  form,
+  setForm,
+  isLoading = false,
+}: FormPreviewProps) => {
+  const [isExporting, setIsExporting] = useState(false);
+
   const normalizedFields = useMemo(() => {
     const safeForm = form as Form;
     return (safeForm.fields || [])
@@ -29,13 +40,78 @@ const FormPreview = ({ form, isLoading = false }: FormPreviewProps) => {
       .sort((a, b) => a.location - b.location);
   }, [form]);
 
+  const buildGoogleFormURL = (googleFormId: string) =>
+    `https://docs.google.com/forms/d/${googleFormId}/edit`;
+
+  const CreateGoogleForm = async () => {
+    setIsExporting(true);
+
+    const { userId, _id } = form as Form;
+
+    const safeForm = form as Form;
+    const normalizedGoogleFormPayload = {
+      title: safeForm.title,
+      description: safeForm.description,
+      fields: (safeForm.fields || []).map((field, index) => {
+        const normalizedType =
+          (field as FormField & { fieldType?: FormField["type"] }).fieldType ||
+          field.type ||
+          "text";
+
+        return {
+          label: field.label,
+          fieldType: normalizedType,
+          options: field.options,
+          required: field.required,
+          location: typeof field.location === "number" ? field.location : index,
+        };
+      }),
+    };
+
+    try {
+      const res = await fetch(CREATE_GOOGLE_FORM_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          formId: _id,
+          form: normalizedGoogleFormPayload,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Failed to create Google Form:", data);
+        return;
+      }
+
+      setForm &&
+        setForm({
+          ...(form as Form),
+          googleFormId: data.data.googleForm,
+          googleFormUrl: buildGoogleFormURL(data.data.googleForm),
+          isConnectedToGoogleForm: true,
+        });
+
+      console.log("Google Form created successfully:", data);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const title = (form as Form).title || "Untitled Form";
   const description = (form as Form).description;
-  const createdAt = (form as Form).createdAt;
 
   return (
     <div className=" flex-1 h-full overflow-auto pb-24">
-      <TopBar title={title} createdAt={createdAt} />
+      <TopBar
+        form={form}
+        handleCreateGoogleForm={CreateGoogleForm}
+        isExporting={isExporting}
+      />
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6 sm:px-6">
         <FormTitlePart title={title} description={description} />
         {normalizedFields.length === 0 ? (
@@ -125,19 +201,39 @@ const SkeletonField = () => {
 
 export default FormPreview;
 
-const TopBar = ({ title, createdAt }: { title: string; createdAt: Date }) => {
+type TopBarProps = {
+  form: Form | {};
+  handleCreateGoogleForm: () => void;
+  isExporting: boolean;
+};
+
+const TopBar = ({ form, handleCreateGoogleForm, isExporting }: TopBarProps) => {
   const [activeView, setActiveView] = useState<"chat" | "preview">("preview");
+
+  console.log(form);
+
+  if (!form || !("title" in form)) {
+    return (
+      <div className="w-full border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:gap-4 sm:px-5 md:flex-row md:items-center md:justify-between">
+          <Skeleton className="h-5 w-1/4" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:gap-4 sm:px-5 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-0.5">
           <div className="text-base font-semibold text-foreground sm:text-lg">
-            {title}
+            {form.title || "Untitled Form"}
           </div>
           <div className="text-[11px] text-muted-foreground sm:text-xs">
             Created at{" "}
-            {createdAt ? new Date(createdAt).toLocaleString() : "Unknown"}
+            {form.createdAt
+              ? new Date(form.createdAt).toLocaleString()
+              : "Unknown"}
           </div>
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center md:w-auto md:justify-end">
@@ -169,9 +265,45 @@ const TopBar = ({ title, createdAt }: { title: string; createdAt: Date }) => {
               Preview
             </button>
           </div>
-          <Button variant="secondary" className="w-full gap-2 sm:w-auto">
-            Save to Google Forms
-          </Button>
+          {!form.isConnectedToGoogleForm && (
+            <Button
+              variant="secondary"
+              className="w-full gap-2 sm:w-auto"
+              onClick={handleCreateGoogleForm}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <>
+                  <Spinner className="h-4 w-4" />
+                  Exporting...
+                </>
+              ) : (
+                "Export to Google Form"
+              )}
+            </Button>
+          )}
+
+          {form.isConnectedToGoogleForm && form.googleFormUrl && (
+            <Button
+              variant="outline"
+              className="w-full gap-2 sm:w-auto"
+              asChild
+            >
+              <a
+                href={form.googleFormUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View on Google Forms
+              </a>
+            </Button>
+          )}
+
+          {form.isConnectedToGoogleForm && form.googleFormId && (
+            <Button variant="default" className="w-full gap-2 sm:w-auto">
+              Sync with Google Form
+            </Button>
+          )}
         </div>
       </div>
     </div>

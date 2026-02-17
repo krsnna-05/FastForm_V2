@@ -81,7 +81,7 @@ const FormBuilder = () => {
 
         const payload = await res.json();
         if (payload?.data) {
-          const normalized = {
+          const normalized: Form = {
             ...payload.data,
             fields: Array.isArray(payload.data.fields)
               ? payload.data.fields.map((field: any, index: number) => ({
@@ -94,6 +94,7 @@ const FormBuilder = () => {
                     : new Date(),
                 }))
               : [],
+            isConnectedToGoogleForm: !!payload.data.googleFormId,
           };
 
           setForm(normalized);
@@ -334,7 +335,7 @@ const FormBuilder = () => {
         isLoading={isBusy}
         formId={formId}
       />
-      <FormPreview form={form} isLoading={isBusy} />
+      <FormPreview form={form} setForm={setForm} isLoading={isBusy} />
     </div>
   );
 };

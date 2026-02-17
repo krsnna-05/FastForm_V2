@@ -1,6 +1,6 @@
 type FormField = {
   label: string;
-  type: "text" | "para" | "single_choice" | "multiple_choice";
+  type: "text" | "para" | "radio" | "checkbox";
   options?: string[]; // Only for multiple_choice
   required: boolean;
   location: number; // Position of the field in the form
@@ -12,6 +12,9 @@ type Form = {
   title: string;
   description?: string;
   fields: FormField[] | [];
+  googleFormId?: string;
+  googleFormUrl?: string;
+  isConnectedToGoogleForm?: boolean;
   createdAt: Date;
 };
 
