@@ -19,4 +19,18 @@ const parsePagination = (req: Request) => {
   };
 };
 
-export { parseUserId, parsePagination };
+const parseUserIdAndFormId = async (req: Request) => {
+  const { formId } = req.params;
+  const userId = parseUserId(req);
+
+  if (!formId || typeof formId !== "string") {
+    throw new Error("Missing or invalid formId");
+  }
+
+  if (!userId || typeof userId !== "string") {
+    throw new Error("Unauthorized: Missing user information");
+  }
+
+  return { formId, userId };
+};
+export { parseUserId, parsePagination, parseUserIdAndFormId };

@@ -1,6 +1,14 @@
 import { Request, Response } from "express";
-import { parsePagination, parseUserId } from "./formRetrieve.parsers";
-import { getFormForUser, getPaginatedForms } from "./formRetrieve.queries";
+import {
+  parsePagination,
+  parseUserId,
+  parseUserIdAndFormId,
+} from "./formRetrieve.parsers";
+import {
+  createFormForUserById,
+  getFormForUser,
+  getPaginatedForms,
+} from "./formRetrieve.queries";
 
 const getForms = async (req: Request, res: Response) => {
   try {
@@ -39,6 +47,11 @@ const getFormById = async (req: Request, res: Response) => {
       return;
     }
 
+    if (typeof formId !== "string") {
+      res.status(400).json({ error: "Invalid formId" });
+      return;
+    }
+
     const form = await getFormForUser({ formId, userId });
 
     if (!form) {
@@ -53,4 +66,17 @@ const getFormById = async (req: Request, res: Response) => {
   }
 };
 
-export { getForms, getFormById };
+const createForm = async (req: Request, res: Response) => {
+  const { formId, userId } = await parseUserIdAndFormId(req);
+
+  try {
+    const createdForm = await createFormForUserById(formId, userId);
+
+    return createdForm;
+  } catch (error) {
+    console.error("Error creating form:", error);
+    throw new Error("Failed to create form");
+  }
+};
+
+export { getForms, getFormById, createForm };

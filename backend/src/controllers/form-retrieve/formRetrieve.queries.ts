@@ -1,4 +1,5 @@
 import FormModel from "../../models/Form";
+import { Form } from "../../types/Form.DB";
 
 const getPaginatedForms = async ({
   userId,
@@ -37,4 +38,35 @@ const getFormForUser = async ({
   return FormModel.findOne(query).lean().exec();
 };
 
-export { getPaginatedForms, getFormForUser };
+const createFormForUserById = async (formId: string, userId: string) => {
+  try {
+    const defaultForm: Form = {
+      _id: formId,
+      userId: userId,
+      title: "Untitled Form",
+      description: "",
+      fields: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isSyncedWithGoogleForm: false,
+    };
+
+    const existingForm = await getFormForUser({ formId, userId });
+
+    if (existingForm) {
+      throw new Error("Form with this ID already exists for the user");
+    }
+
+    const newForm = new FormModel(defaultForm);
+
+    newForm.isNew = true;
+
+    await newForm.save();
+
+    return newForm.toObject();
+  } catch (error) {
+    return error;
+  }
+};
+
+export { getPaginatedForms, getFormForUser, createFormForUserById };

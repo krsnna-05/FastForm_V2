@@ -1,1 +1,5 @@
-export { getForms, getFormById } from "./form-retrieve/formRetrieve.handlers";
+export {
+  getForms,
+  getFormById,
+  createForm,
+} from "./form-retrieve/formRetrieve.handlers";
