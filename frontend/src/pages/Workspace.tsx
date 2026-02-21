@@ -1,11 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { DrawerTrigger } from "@/components/ui/drawer";
 import { Calendar, Plus, SquareStack } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Drawer } from "@/components/ui/drawer";
-import CreateForm from "@/components/workspace/CreateForm";
 import useAuthStore from "@/store/auth.store";
 import { useNavigate } from "react-router";
+import { v4 as uuidV4 } from "uuid";
 
 type FormSummary = {
   _id: string;
@@ -88,7 +86,13 @@ const Workspace = () => {
   }, [page, userId]);
 
   const handleOpenForm = (formId: string) => {
-    navigate(`/workspace/form/edit?formId=${formId}`);
+    navigate(`/workspace/form/edit?formId=${formId}&request=edit`);
+  };
+
+  const handleCreateForm = () => {
+    const newFormId = uuidV4();
+
+    navigate(`/workspace/form/edit?formId=${newFormId}&request=create`);
   };
 
   return (
@@ -104,22 +108,19 @@ const Workspace = () => {
               Create and manage your forms in one place
             </p>
           </div>
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Button
-                size="lg"
-                className="w-full md:w-auto gap-2 shadow-md hover:shadow-lg transition-shadow"
-              >
-                <Plus className="h-4 w-4" />
-                Create Form
-              </Button>
-            </DrawerTrigger>
-            <CreateForm />
-          </Drawer>
+
+          <Button
+            size="lg"
+            className="w-full md:w-auto gap-2 shadow-md hover:shadow-lg transition-shadow"
+            onClick={handleCreateForm}
+          >
+            <Plus className="h-4 w-4" />
+            Create Form
+          </Button>
         </div>
 
         {/* List */}
-        <div className="rounded-xl md:rounded-2xl border border-border/50 bg-gradient-to-br from-card to-card/50 p-6 md:p-10 backdrop-blur-sm">
+        <div className="rounded-xl md:rounded-2xl border border-border/50 bg-linear-to-br from-card to-card/50 p-6 md:p-10 backdrop-blur-sm">
           {error ? (
             <div className="text-sm text-destructive">{error}</div>
           ) : null}

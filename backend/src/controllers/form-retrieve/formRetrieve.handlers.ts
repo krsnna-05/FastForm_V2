@@ -5,6 +5,7 @@ import {
   parseUserIdAndFormId,
 } from "./formRetrieve.parsers";
 import {
+  checkFormExistsForUser,
   createFormForUserById,
   getFormForUser,
   getPaginatedForms,
@@ -69,9 +70,19 @@ const getFormById = async (req: Request, res: Response) => {
 const createForm = async (req: Request, res: Response) => {
   const { formId, userId } = await parseUserIdAndFormId(req);
 
+  console.log("Creating form with ID:", formId, "for user:", userId);
+
+  const formExists: boolean = await checkFormExistsForUser({ formId, userId });
+
+  if (formExists) {
+    res
+      .status(400)
+      .json({ error: "Form with this ID already exists for the user" });
+    return;
+  }
+
   try {
     const createdForm = await createFormForUserById(formId, userId);
-
     return createdForm;
   } catch (error) {
     console.error("Error creating form:", error);

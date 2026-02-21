@@ -38,6 +38,17 @@ const getFormForUser = async ({
   return FormModel.findOne(query).lean().exec();
 };
 
+const checkFormExistsForUser = async ({
+  formId,
+  userId,
+}: {
+  formId: string;
+  userId: string;
+}) => {
+  const count = await FormModel.countDocuments({ _id: formId, userId }).exec();
+  return count > 0;
+};
+
 const createFormForUserById = async (formId: string, userId: string) => {
   try {
     const defaultForm: Form = {
@@ -69,4 +80,9 @@ const createFormForUserById = async (formId: string, userId: string) => {
   }
 };
 
-export { getPaginatedForms, getFormForUser, createFormForUserById };
+export {
+  getPaginatedForms,
+  getFormForUser,
+  createFormForUserById,
+  checkFormExistsForUser,
+};

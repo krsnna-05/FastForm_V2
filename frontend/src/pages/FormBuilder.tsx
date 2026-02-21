@@ -12,6 +12,7 @@ import useAuthStore from "@/store/auth.store";
 
 const API_ENDPOINT = "http://localhost:3000/api/form/edit";
 const FORM_FETCH_ENDPOINT = "http://localhost:3000/api/form";
+const FORM_CREATE_ENDOPOINT = "http://localhost:3000/api/form/create";
 
 const FormBuilder = () => {
   const { User } = useAuthStore();
@@ -45,8 +46,15 @@ const FormBuilder = () => {
     transport,
   });
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const formId = searchParams.get("formId");
+  const requestType = searchParams.get("request") as "create" | "edit" | null;
+
+  if (!requestType) {
+    return <div className="p-4">request type null</div>;
+  } else if (requestType !== "create" && requestType !== "edit") {
+    return <div className="p-4">invalid request type</div>;
+  }
 
   useEffect(() => {
     if (!formId || !User?.userId) {
@@ -109,10 +117,50 @@ const FormBuilder = () => {
       }
     };
 
-    fetchForm();
+    const createForm = async () => {
+      try {
+        const res = await fetch(FORM_CREATE_ENDOPOINT, {
+          method: "POST",
+          body: JSON.stringify({ formId, userId: User?.userId }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        let createResponseBody: unknown = null;
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          createResponseBody = await res.json();
+        }
+
+        console.log("Create form response:", createResponseBody);
+
+        if (!res.ok) {
+          throw new Error(res.statusText || "Failed to create form");
+        }
+
+        setSearchParams(
+          {
+            formId,
+            request: "edit",
+          },
+          { replace: true },
+        );
+
+        fetchForm();
+      } catch (error) {
+        console.error("Failed to create form:", error);
+      }
+    };
+
+    if (requestType === "edit") {
+      fetchForm();
+    } else if (requestType === "create") {
+      createForm();
+    }
 
     return () => controller.abort();
-  }, [formId, User?.userId]);
+  }, [formId, User?.userId, requestType]);
 
   const handleSend = async (
     prompt: string,
