@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Conversation,
   ConversationContent,
@@ -18,23 +18,14 @@ import {
   PromptInputHeader,
   PromptInputSubmit,
   PromptInputTextarea,
-  PromptInputTools,
   type PromptInputMessage,
 } from "../ai-elements/prompt-input";
-import { Bot, MessageCircle, Sparkles, Wand2 } from "lucide-react";
+import { Sparkles, Wand2 } from "lucide-react";
 import type { UIMessage } from "ai";
-import type { Form } from "@/types/Form";
 
 type SideBarProps = {
   messages?: UIMessage[];
-  setMessages: (messages: UIMessage[]) => void;
-  sendMessage: (message: UIMessage, options?: { body?: object }) => void;
-  onSend: (
-    message: string,
-    mode: "ask" | "agent",
-    req: "create" | "edit",
-  ) => void;
-  form: Form | {};
+  onSend: (message: string, req: "create" | "edit") => void;
   isLoading?: boolean;
   formId?: string | null;
 };
@@ -46,7 +37,6 @@ const SideBar = ({
   formId,
 }: SideBarProps) => {
   const [text, setText] = useState("");
-  const [aiMode, setAiMode] = useState<"ask" | "agent">("ask");
 
   const handleSubmit = (message: PromptInputMessage) => {
     const trimmedText = message.text?.trim();
@@ -58,7 +48,7 @@ const SideBar = ({
       return;
     }
 
-    onSend(trimmedText, aiMode, "edit");
+    onSend(trimmedText, "edit");
     setText("");
   };
 
@@ -116,36 +106,6 @@ const SideBar = ({
             />
           </PromptInputBody>
           <PromptInputFooter className="border-t border-border bg-muted/30 px-4 py-3">
-            <PromptInputTools>
-              <div className="flex items-center gap-1 rounded-full border border-border/60 bg-background/70 p-1">
-                <button
-                  type="button"
-                  onClick={() => setAiMode("ask")}
-                  className={`flex items-center gap-1 rounded-full px-2 py-1 text-[11px] transition-colors ${
-                    aiMode === "ask"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  aria-pressed={aiMode === "ask"}
-                >
-                  <MessageCircle className="h-3 w-3" />
-                  Ask
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAiMode("agent")}
-                  className={`flex items-center gap-1 rounded-full px-2 py-1 text-[11px] transition-colors ${
-                    aiMode === "agent"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  aria-pressed={aiMode === "agent"}
-                >
-                  <Bot className="h-3 w-3" />
-                  Agent
-                </button>
-              </div>
-            </PromptInputTools>
             <PromptInputSubmit
               disabled={!text || isLoading}
               className="gap-2 shadow-md hover:shadow-lg transition-all"

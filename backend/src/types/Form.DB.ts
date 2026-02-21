@@ -1,4 +1,5 @@
 type FormField = {
+  id: string;
   label: string;
   fieldType: "text" | "para" | "radio" | "checkbox";
   options?: string[]; // Only for multiple_choice

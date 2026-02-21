@@ -49,6 +49,9 @@ const FormPreview = ({
     const { userId, _id } = form as Form;
 
     const safeForm = form as Form;
+
+    console.log(safeForm);
+
     const normalizedGoogleFormPayload = {
       title: safeForm.title,
       description: safeForm.description,

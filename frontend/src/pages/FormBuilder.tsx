@@ -42,7 +42,7 @@ const FormBuilder = () => {
     setForm((prev) => ({ ...prev, userId: User?.userId || "" }));
   }, [User?.userId]);
 
-  const { messages, setMessages, sendMessage } = useChat({
+  const { messages, setMessages } = useChat({
     transport,
   });
 
@@ -162,11 +162,7 @@ const FormBuilder = () => {
     return () => controller.abort();
   }, [formId, User?.userId, requestType]);
 
-  const handleSend = async (
-    prompt: string,
-    mode: "ask" | "agent",
-    req: "create" | "edit",
-  ) => {
+  const handleSend = async (prompt: string, req: "create" | "edit") => {
     if (req === "edit" && !formId) {
       console.error("Missing formId for edit request");
       return;
@@ -194,87 +190,13 @@ const FormBuilder = () => {
       body: JSON.stringify({
         form,
         messages: [...messages, newMessages],
-        aiMode: mode,
         formId: formId,
         userId: User?.userId || "",
         request: req,
       }),
     });
 
-    if (res.ok && mode === "ask") {
-      const reader = res.body?.getReader();
-
-      if (!reader) {
-        console.error("No reader available on response body");
-        return;
-      }
-
-      const decoder = new TextDecoder();
-      let done = false;
-      let buffer = "";
-
-      const newMessageId = uuidv4() as string;
-
-      let messageBuffer: string = "";
-
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
-
-        if (value) {
-          buffer += decoder.decode(value, { stream: true });
-        }
-
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-
-          if (!trimmed) {
-            continue;
-          }
-
-          const payload = trimmed.startsWith("data:")
-            ? trimmed.slice("data:".length).trim()
-            : trimmed;
-
-          if (!payload) {
-            continue;
-          }
-
-          let parsed: any;
-          try {
-            parsed = JSON.parse(payload);
-          } catch (error) {
-            console.warn("Skipping non-JSON payload:", payload, error);
-            continue;
-          }
-
-          if (parsed.type === "text-delta") {
-            messageBuffer += parsed.delta;
-            const updatedText = messageBuffer;
-
-            const nextMessage: UIMessage = {
-              id: newMessageId,
-              role: "assistant",
-              parts: [
-                {
-                  type: "text",
-                  text: updatedText,
-                },
-              ],
-            };
-
-            setMessages((prev) => [
-              ...prev.filter((msg) => msg.id !== newMessageId),
-              nextMessage,
-            ]);
-          }
-        }
-      }
-      setIsLoading(false);
-    } else if (res.ok && mode === "agent") {
+    if (res.ok) {
       const reader = res.body?.getReader();
 
       if (!reader) {
@@ -365,8 +287,8 @@ const FormBuilder = () => {
 
     if (!createFormRequest || !createFormRequest.prompt) return;
 
-    handleSend(createFormRequest.prompt, "agent", "create");
-  }, [formId, form, sendMessage, messages]);
+    handleSend(createFormRequest.prompt, "create");
+  }, [formId, form, messages]);
 
   useEffect(() => {}, [form]);
 
@@ -376,10 +298,7 @@ const FormBuilder = () => {
     <div className="flex h-screen">
       <SideBar
         messages={messages}
-        setMessages={setMessages}
-        sendMessage={sendMessage}
         onSend={handleSend}
-        form={form}
         isLoading={isBusy}
         formId={formId}
       />

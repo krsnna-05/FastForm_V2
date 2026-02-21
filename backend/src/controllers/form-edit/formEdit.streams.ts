@@ -1,9 +1,4 @@
-import {
-  convertToModelMessages,
-  streamText,
-  ToolLoopAgent,
-  stepCountIs,
-} from "ai";
+import { convertToModelMessages, ToolLoopAgent, stepCountIs } from "ai";
 import type { UIMessage } from "ai";
 import { ollama } from "ai-sdk-ollama";
 import { Response } from "express";
@@ -16,15 +11,6 @@ import {
 } from "../../ai.tools";
 import FormModel from "../../models/Form";
 import type { Form } from "../../types/Form.DB";
-
-const askQuery = async (messages: UIMessage[], res: Response) => {
-  const result = streamText({
-    model: ollama("ministral-3:3b"),
-    messages: await convertToModelMessages(messages),
-    system: prompts.ask,
-  });
-  result.pipeUIMessageStreamToResponse(res);
-};
 
 const agentQuery = async (
   messages: UIMessage[],
@@ -79,6 +65,13 @@ const agentQuery = async (
           updatedForm.fields.push(toolResult.field);
         }
 
+        if (toolResult.type === "delete_field") {
+          updatedForm.fields = updatedForm.fields.filter(
+            (field) => field. !== toolResult.fieldId,
+          );
+        }
+
+
         res.write(JSON.stringify(toolResult) + "\n");
       }
 
@@ -121,4 +114,4 @@ const agentQuery = async (
   }
 };
 
-export { askQuery, agentQuery };
+export { agentQuery };

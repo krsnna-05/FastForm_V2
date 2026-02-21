@@ -5,8 +5,6 @@ interface EditFormRequest {
   request: "create" | "edit";
   form: Form;
   messages: UIMessage[];
-  aiMode?: "ask" | "agent";
-  mode?: "ask" | "agent";
   formId?: string;
   userId: string;
 }
