@@ -9,8 +9,8 @@ import {
   updateDescriptionTool,
   updateTitleTool,
 } from "../../ai.tools";
-import FormModel from "../../models/Form";
 import type { Form } from "../../types/Form.DB";
+import { applyToolAction } from "./formEdit.utils";
 
 const agentQuery = async (
   messages: UIMessage[],
@@ -18,10 +18,13 @@ const agentQuery = async (
   formId: string,
   userId: string,
   form: Form,
-  allowUpsert: boolean,
 ) => {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Transfer-Encoding", "chunked");
+
+  console.log();
+  console.log("Starting agent stream with messages:", messages);
+  console.log();
 
   try {
     const formAgent = new ToolLoopAgent({
@@ -53,44 +56,42 @@ const agentQuery = async (
       if (event.type === "tool-result") {
         const toolResult: any = event.output;
 
-        if (toolResult.type === "update_title") {
-          updatedForm.title = toolResult.title;
-        }
+        try {
+          const newForm = applyToolAction(updatedForm, toolResult);
 
-        if (toolResult.type === "update_description") {
-          updatedForm.description = toolResult.description;
-        }
+          // Mutate safely after validation
+          updatedForm.title = newForm.title;
+          updatedForm.description = newForm.description;
+          updatedForm.fields = newForm.fields;
 
-        if (toolResult.type === "add_field") {
-          updatedForm.fields.push(toolResult.field);
-        }
+          console.log("Form safely updated:", updatedForm);
 
-        if (toolResult.type === "delete_field") {
-          updatedForm.fields = updatedForm.fields.filter(
-            (field) => field. !== toolResult.fieldId,
+          res.write(JSON.stringify(toolResult) + "\n");
+        } catch (err: any) {
+          console.error("Tool action rejected:", err.message);
+
+          res.write(
+            JSON.stringify({
+              type: "tool_error",
+              message: err.message,
+            }) + "\n",
           );
         }
-
-
-        res.write(JSON.stringify(toolResult) + "\n");
       }
 
       if (event.type === "text-delta") {
-        finalText += event.text;
+        console.log("Text delta received:", event.text);
 
         res.write(
           JSON.stringify({
             type: "assistant_text",
-            delta: event.text,
+            text: event.text,
           }) + "\n",
         );
+
+        finalText += event.text;
       }
     }
-
-    await FormModel.findByIdAndUpdate(formId, updatedForm, {
-      new: true,
-      upsert: allowUpsert,
-    });
 
     res.write(
       JSON.stringify({

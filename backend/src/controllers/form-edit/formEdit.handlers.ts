@@ -2,38 +2,23 @@ import { Request, Response } from "express";
 import { appendFormStateMessage, resolveFormState } from "./formEdit.state";
 import { agentQuery } from "./formEdit.streams";
 import type { EditFormRequest } from "./formEdit.types";
+import { Form } from "../../types/Form.DB";
 
 const editForm = async (req: Request, res: Response) => {
   try {
-    const { form, messages, formId, request, userId } =
-      req.body as EditFormRequest;
+    const { form, messages, formId, userId } = req.body as EditFormRequest;
 
-    if (!formId) {
-      res.status(400).json({ error: "Missing formId" });
+    if (!formId || !userId || messages.length === 0 || !form) {
+      res.status(400).json({ error: "Invalid Request" });
       return;
     }
 
-    const currentForm = await resolveFormState({
-      request,
-      formId,
-      userId,
-      fallbackForm: form,
-    });
+    const currForm = form as Form;
 
-    if (!currentForm) {
-      res.status(404).json({ error: "Form not found" });
-      return;
-    }
+    console.log("Form Received for Edit:", currForm);
 
-    const updatedMessages = appendFormStateMessage(messages, currentForm);
-    await agentQuery(
-      updatedMessages,
-      res,
-      formId,
-      userId,
-      currentForm,
-      request === "create",
-    );
+    const updatedMessages = appendFormStateMessage(messages, currForm);
+    await agentQuery(updatedMessages, res, formId, userId, currForm);
   } catch (error) {
     console.error("Form edit error:", error);
     res.status(500).json({ error: "Failed to process form request" });
