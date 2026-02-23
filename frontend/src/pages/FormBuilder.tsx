@@ -24,11 +24,55 @@ const FormBuilder = () => {
     description: "",
     fields: [],
     createdAt: new Date(),
+    isSyncedToDb: false,
+    isSyncedToGoogleForms: false,
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingForm, setIsFetchingForm] = useState(false);
   const hasInitializedRef = useRef(false);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const formId = searchParams.get("formId");
+  const requestType = searchParams.get("request") as "create" | "edit" | null;
+
+  // Helper function to save form to localStorage
+  const saveFormToLocalStorage = (formData: Form) => {
+    const currentFormId = formData._id || formId;
+    if (currentFormId) {
+      localStorage.setItem(
+        `fastform_form_${currentFormId}`,
+        JSON.stringify({
+          ...formData,
+          isSyncedToDb: false,
+          isSyncedToGoogleForms: formData.isSyncedToGoogleForms,
+          createdAt:
+            formData.createdAt instanceof Date
+              ? formData.createdAt.toISOString()
+              : formData.createdAt,
+        }),
+      );
+    }
+  };
+
+  // Helper function to load form from localStorage
+  const loadFormFromLocalStorage = (formIdParam: string): Form | null => {
+    if (!formIdParam) return null;
+    const stored = localStorage.getItem(`fastform_form_${formIdParam}`);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        return {
+          ...parsed,
+          createdAt: new Date(parsed.createdAt),
+        };
+      } catch (error) {
+        console.error("Failed to parse stored form:", error);
+        return null;
+      }
+    }
+    return null;
+  };
 
   const transport = useMemo(
     () =>
@@ -39,16 +83,16 @@ const FormBuilder = () => {
   );
 
   useEffect(() => {
-    setForm((prev) => ({ ...prev, userId: User?.userId || "" }));
+    setForm((prev) => {
+      const updated = { ...prev, userId: User?.userId || "" };
+      saveFormToLocalStorage(updated);
+      return updated;
+    });
   }, [User?.userId]);
 
   const { messages, setMessages } = useChat({
     transport,
   });
-
-  const [searchParams, setSearchParams] = useSearchParams();
-  const formId = searchParams.get("formId");
-  const requestType = searchParams.get("request") as "create" | "edit" | null;
 
   if (!requestType) {
     return <div className="p-4">request type null</div>;
@@ -66,6 +110,13 @@ const FormBuilder = () => {
     );
 
     if (createFormRequest?.prompt) {
+      return;
+    }
+
+    // Check localStorage first
+    const localForm = loadFormFromLocalStorage(formId);
+    if (localForm && localForm._id) {
+      setForm(localForm);
       return;
     }
 
@@ -103,9 +154,12 @@ const FormBuilder = () => {
                 }))
               : [],
             isConnectedToGoogleForm: !!payload.data.googleFormId,
+            isSyncedToDb: true,
+            isSyncedToGoogleForms: !!payload.data.googleFormId,
           };
 
           setForm(normalized);
+          saveFormToLocalStorage(normalized);
         }
       } catch (error: any) {
         if (error?.name === "AbortError") {
@@ -232,12 +286,16 @@ const FormBuilder = () => {
           let parsed: any;
           try {
             parsed = JSON.parse(trimmed);
+
+            // console.log("Parsed Data : ", parsed);
           } catch (error) {
             console.warn("Skipping non-JSON payload:", trimmed, error);
             continue;
           }
           if (parsed.type === "assistant_text") {
-            messageBuffer += parsed.delta || "";
+            console.log(parsed.type);
+
+            messageBuffer += parsed.text || "";
 
             const nextMessage: UIMessage = {
               id: newMessageId,
@@ -249,6 +307,8 @@ const FormBuilder = () => {
                 },
               ],
             };
+
+            console.log(nextMessage);
 
             setMessages((prev) => [
               ...prev.filter((msg) => msg.id !== newMessageId),
@@ -262,7 +322,11 @@ const FormBuilder = () => {
             continue;
           }
 
-          setForm((prevForm) => applyOperation(prevForm, parsed));
+          setForm((prevForm) => {
+            const updated = applyOperation(prevForm, parsed);
+            saveFormToLocalStorage(updated);
+            return updated;
+          });
         }
       }
       setIsLoading(false);

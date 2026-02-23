@@ -1,6 +1,11 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MessageSquareText, MonitorSmartphone } from "lucide-react";
+import {
+  MessageSquareText,
+  MonitorSmartphone,
+  Cloud,
+  CloudOff,
+} from "lucide-react";
 import {
   CheckboxFieldPart,
   FormTitlePart,
@@ -97,6 +102,7 @@ const FormPreview = ({
           googleFormId: data.data.googleForm,
           googleFormUrl: buildGoogleFormURL(data.data.googleForm),
           isConnectedToGoogleForm: true,
+          isSyncedToGoogleForms: true,
         });
 
       console.log("Google Form created successfully:", data);
@@ -232,11 +238,26 @@ const TopBar = ({ form, handleCreateGoogleForm, isExporting }: TopBarProps) => {
           <div className="text-base font-semibold text-foreground sm:text-lg">
             {form.title || "Untitled Form"}
           </div>
-          <div className="text-[11px] text-muted-foreground sm:text-xs">
-            Created at{" "}
-            {form.createdAt
-              ? new Date(form.createdAt).toLocaleString()
-              : "Unknown"}
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground sm:text-xs">
+            <span>
+              Created at{" "}
+              {form.createdAt
+                ? new Date(form.createdAt).toLocaleString()
+                : "Unknown"}
+            </span>
+            <span className="flex items-center gap-1">
+              {form.isSyncedToDb ? (
+                <>
+                  <Cloud className="h-3 w-3 text-blue-500" />
+                  <span>Saved to DB</span>
+                </>
+              ) : (
+                <>
+                  <CloudOff className="h-3 w-3 text-yellow-500" />
+                  <span>Local only</span>
+                </>
+              )}
+            </span>
           </div>
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center md:w-auto md:justify-end">

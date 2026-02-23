@@ -54,7 +54,7 @@ const SideBar = ({
 
   return (
     <div className="h-full w-full md:w-sm border-r border-border p-5 flex flex-col gap-4">
-      <div className="max-h-[725px] h-full min-h-0 rounded-lg border border-border/50 bg-card/50 overflow-hidden flex flex-col">
+      <div className="max-h-[650px] h-full min-h-0 rounded-lg border border-border/50 bg-card/50 overflow-hidden flex flex-col">
         <Conversation className="flex-1">
           <ConversationContent>
             {messages.length === 0 ? (

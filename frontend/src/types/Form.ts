@@ -16,6 +16,8 @@ type Form = {
   googleFormUrl?: string;
   isConnectedToGoogleForm?: boolean;
   createdAt: Date;
+  isSyncedToDb?: boolean;
+  isSyncedToGoogleForms?: boolean;
 };
 
 export type { Form, FormField };
